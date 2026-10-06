@@ -13420,8 +13420,10 @@ int main(int argc, char** argv) {
                 std::snprintf(ls.memcard_path[0], sizeof(ls.memcard_path[0]), "%s", mc1.c_str());
                 std::snprintf(ls.memcard_path[1], sizeof(ls.memcard_path[1]), "%s", mc2.c_str());
             }
-            ls.memcard_enabled[0] = seed.memcard1_enabled ? 1 : 0;
-            ls.memcard_enabled[1] = seed.memcard2_enabled ? 1 : 0;
+            ls.memcard_enabled[0] = seed.memcard1_enabled ? RECOMP_LAUNCHER_MEMCARD_ON
+                                                          : RECOMP_LAUNCHER_MEMCARD_OFF;
+            ls.memcard_enabled[1] = seed.memcard2_enabled ? RECOMP_LAUNCHER_MEMCARD_ON
+                                                          : RECOMP_LAUNCHER_MEMCARD_OFF;
             /* Which disc the dropdown opens on (1-based; ignored when the
              * game is single-disc and gi.discs is empty). */
             ls.disc_index = selected_disc_index;
@@ -13699,8 +13701,10 @@ int main(int argc, char** argv) {
                     seed.has_bios_path = false;
                 }
                 /* Memory-card slots: enable flags + any Browse/New paths. */
-                seed.memcard1_enabled = ls.memcard_enabled[0] != 0; seed.has_memcard1_enabled = true;
-                seed.memcard2_enabled = ls.memcard_enabled[1] != 0; seed.has_memcard2_enabled = true;
+                seed.memcard1_enabled = ls.memcard_enabled[0] != RECOMP_LAUNCHER_MEMCARD_OFF;
+                seed.has_memcard1_enabled = true;
+                seed.memcard2_enabled = ls.memcard_enabled[1] != RECOMP_LAUNCHER_MEMCARD_OFF;
+                seed.has_memcard2_enabled = true;
 #if defined(RECOMP_LAUNCHER_HAS_MULTITAP_ENABLED)
                 seed.multitap_enabled = ls.multitap_enabled != 0;
                 seed.has_multitap_enabled = true;

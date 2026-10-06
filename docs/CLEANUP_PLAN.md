@@ -255,6 +255,17 @@ New finding from this phase:
   becomes digital with a keyboard seat. Frame interpolation is reset on
   purpose (mod-owned in this game). Not fixed here, since Phase 2 was
   behaviour-preserving.
+  **Fixed 2026-10-06.** Memory cards: `memcard_enabled` used 0 for both
+  "unset" and "off", and the launcher turns unset into on
+  (`launcher_model.c`). Off now has its own value
+  (`RECOMP_LAUNCHER_MEMCARD_OFF`). Deadzone: launch still ran the old
+  shared-deadzone rule that copied P1 onto P2, although each controller card
+  has its own stepper; it now rounds each player separately (0 to 100% in
+  5% steps, the stepper's range), and the unused shared-mode functions are
+  deleted. The P1 analog-to-digital change is intended: a keyboard seat
+  always plays digital, and choosing a controller switches it back to
+  analog. Check: the round trip now keeps both values (baselines
+  re-recorded), and the dashboard shows card 2 off.
 
 Original plan:
 

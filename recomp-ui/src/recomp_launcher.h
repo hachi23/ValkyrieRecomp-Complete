@@ -39,6 +39,9 @@ extern "C" {
 #define RECOMP_LAUNCHER_HAS_MULTITAP_ENABLED 1
 /* Host may #ifdef this when reading multitap_analog (DualShock-on-tap hack). */
 #define RECOMP_LAUNCHER_HAS_MULTITAP_ANALOG 1
+/* RecompLauncherCSettings.memcard_enabled values; 0 means unset (= on). */
+#define RECOMP_LAUNCHER_MEMCARD_ON  1
+#define RECOMP_LAUNCHER_MEMCARD_OFF 2
 /* Host may #ifdef this when reading Settings.rewind_depth. */
 #define RECOMP_LAUNCHER_HAS_REWIND_DEPTH 1
 /* Host may #ifdef this when reading Settings.rewind_interval. */
@@ -595,8 +598,9 @@ struct RecompLauncherCSettings {
     // Per-slot enable/disable (mirrors the legacy PSX launcher's per-card
     // "Enabled" switch / SIO-port concept: a disabled slot reports no card
     // present). 0 = unset (host predates this field) -> the model defaults it
-    // to enabled at init. Appended additively; see launcher_model_toggle_memcard().
-    int  memcard_enabled[2];
+    // to enabled at init. Off has its own value so a host can say "off"
+    // without it reading as unset. See launcher_model_toggle_memcard().
+    int  memcard_enabled[2];   // RECOMP_LAUNCHER_MEMCARD_ON / _OFF / 0
 
     // ---- audio output device (GameInfo.audio_device_labels consoles) --------
     // The chosen device's display name as enumerated by the HOST (SDL device

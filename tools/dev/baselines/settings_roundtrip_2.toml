@@ -60,7 +60,7 @@ selected = 1
 dir     = "saves"
 card1   = "saves/card1.mcd"
 card2   = "saves/card2.mcd"
-enable1 = true
+enable1 = false
 enable2 = true
 
 [controller]

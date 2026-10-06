@@ -61,7 +61,7 @@ dir     = "saves"
 card1   = "saves/card1.mcd"
 card2   = "saves/card2.mcd"
 enable1 = true
-enable2 = true
+enable2 = false
 
 [controller]
 p1_device = "keyboard"
@@ -69,7 +69,7 @@ p1_mode   = "digital"
 p1_deadzone = 6553
 p2_device = "none"
 p2_mode   = "digital"
-p2_deadzone = 6553
+p2_deadzone = 3276
 multitap  = false
 multitap_analog = false
 deadzone  = 6553

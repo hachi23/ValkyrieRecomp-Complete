@@ -938,3 +938,33 @@ Words learned:
 - Source of truth: the one place a fact is stored; everything else reads it.
 - Baseline: a recorded result from before a change, to compare against.
 - Round trip: sending data out and back to check nothing got lost.
+
+## 2026-10-06: Finding K, the launcher forgot two of your choices
+
+The test robot from Phase 2 caught the launcher changing two settings
+behind your back.
+
+- **Memory card switched off came back on.** The launcher and the game pass
+  each card as a number. 0 meant both "off" and "nobody set this yet", and
+  the launcher turns "nobody set this" into "on". Like a save menu that
+  shows an empty slot and a deleted slot the same way. Now "off" has its
+  own number.
+- **Player 2's deadzone copied player 1's.** The deadzone is how far you
+  can push a stick before the game notices, so a worn stick doesn't drift.
+  Long ago the launcher had one deadzone for everybody. Each controller now
+  has its own, but an old rule still copied player 1's value onto player 2
+  at every launch. I removed that rule and the leftover code behind it.
+
+One change I left alone on purpose: a keyboard player's "Analog" setting
+shows as "D-Pad". A keyboard has no sticks, and the game already treats it
+as a D-pad. Plug in a controller and it goes back to Analog by itself.
+
+Tested: the robot's settings file now comes back with your memory card
+still off and player 2's deadzone kept, and the launcher shows card 2 as
+off.
+
+Words learned:
+
+- Deadzone: the small stick movement the game ignores, to stop drift.
+- Sentinel value: a special number that means "not set" instead of a real
+  choice; trouble starts when it is also a real choice.

@@ -1673,7 +1673,7 @@ void draw_memcard_slot(LauncherModel* m, const LauncherTheme& th, int slot) {
     const SystemProfile* prof = (const SystemProfile*)m->profile;
     ImGui::PushID(slot);
 
-    const bool enabled = m->s.memcard_enabled[slot] != 0;
+    const bool enabled = m->s.memcard_enabled[slot] == RECOMP_LAUNCHER_MEMCARD_ON;
 
     const float slotw   = ImGui::GetContentRegionAvail().x;
     const float start_x = ImGui::GetCursorPosX();

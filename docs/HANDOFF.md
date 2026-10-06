@@ -161,13 +161,16 @@ reproduce; owner deferred it).
 
 ## Next steps
 
-`main` has Phase 1 (`043e181`) and finding J (`68c9886`), pushed. Phase 2
-is three commits on `cleanup/phase-2`; merge after the owner's go.
+`main` has Phase 1, finding J, Phase 2 and finding K, pushed. Netplay is
+out of scope (owner, 2026-10-06): do not spend time testing or fixing it.
 
 1. The owner still needs to press Ctrl+C in game and try the pad shortcuts.
-2. Finding K (launcher resets memory card and P2 settings). Quick win; the
-   round-trip harness already shows it.
-3. Phase 3 file splits. Run `check.sh` after each move; the settings round
+2. Phase 3 file splits. Run `check.sh` after each move; the settings round
    trips guard the launcher bridge.
-4. Update the "Working with submodules" section of `AGENTS.md`.
-5. Findings I1/I2 in `docs/CLEANUP_PLAN.md`.
+3. Update the "Working with submodules" section of `AGENTS.md`.
+4. Findings I1/I2 in `docs/CLEANUP_PLAN.md`.
+5. `psx_last_run_report.json` is still written to the start folder, not
+   `logs/`.
+6. Phase 4 (native overlay build on Windows, the `volatile g_th` mystery,
+   art options). Deferred by the owner: fullscreen bug, achievement pop-up
+   style.

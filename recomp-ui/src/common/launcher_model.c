@@ -139,6 +139,14 @@ static void lm_write_zero_padding(FILE* f, long count) {
     }
 }
 
+/* A memory-card slot the host left unset (0: a host struct that predates the
+ * field, or was zero-initialized) is plugged in, like the legacy launcher. */
+static void lm_default_memcards_on(RecompLauncherCSettings* s) {
+    for (int slot = 0; slot < 2; ++slot)
+        if (s->memcard_enabled[slot] != RECOMP_LAUNCHER_MEMCARD_OFF)
+            s->memcard_enabled[slot] = RECOMP_LAUNCHER_MEMCARD_ON;
+}
+
 static int clampi(int v, int lo, int hi) {
     return v < lo ? lo : (v > hi ? hi : v);
 }
@@ -535,11 +543,7 @@ void launcher_model_init(LauncherModel* m,
     m->s.adaptive_view =
         (m->adaptive_view_supported && m->s.adaptive_view) ? 1 : 0;
 
-    // ---- memory-card slots default to enabled (0 == "unset": a host struct
-    // that predates this field, or was zero-initialized, reads as both cards
-    // plugged in — matching the legacy launcher's default) ----
-    if (!m->s.memcard_enabled[0]) m->s.memcard_enabled[0] = 1;
-    if (!m->s.memcard_enabled[1]) m->s.memcard_enabled[1] = 1;
+    lm_default_memcards_on(&m->s);
 
     // ---- infer the SystemProfile this game belongs to (panel composition +
     // per-system specs) from the ABI caps launcher_profile_apply() already set ----
@@ -683,8 +687,9 @@ void launcher_model_init(LauncherModel* m,
     if (m->num_languages > 0)
         m->s.language_index = clampi(m->s.language_index, 0, m->num_languages - 1);
     if (m->has_deadzone_pct) {
-        m->s.deadzone[0] = clampi((m->s.deadzone[0] / 5) * 5, 0, 50);
-        m->s.deadzone[1] = m->s.deadzone[0];
+        /* Each controller card has its own deadzone stepper (5% steps). */
+        for (int p = 0; p < LNG_MAX_PLAYERS; ++p)
+            m->s.deadzone[p] = clampi((m->s.deadzone[p] / 5) * 5, 0, 100);
     }
 
     // ---- mouse controls: seed/clamp against their own ranges ----------------
@@ -1264,6 +1269,7 @@ void launcher_model_request_restore_defaults(LauncherModel* m) {
 void launcher_model_restore_defaults(LauncherModel* m) {
     if (!launcher_model_can_restore_defaults(m)) return;
     m->s = m->default_settings;
+    lm_default_memcards_on(&m->s);
     {
         int d = m->s.rewind_depth;
         if (d != 50 && d != 100 && d != 150 && d != 200)
@@ -1762,20 +1768,6 @@ const char* launcher_model_language_label(const LauncherModel* m) {
     if (m->num_languages <= 0 || !m->language_labels) return "";
     int idx = clampi(m->s.language_index, 0, m->num_languages - 1);
     return m->language_labels[idx] ? m->language_labels[idx] : "";
-}
-
-void launcher_model_cycle_deadzone_pct(LauncherModel* m) {
-    int v = clampi(m->s.deadzone[0], 0, 50);
-    v = ((v / 5) + 1) * 5;
-    if (v > 50) v = 0;
-    m->s.deadzone[0] = v;
-    m->s.deadzone[1] = v;
-}
-
-const char* launcher_model_deadzone_pct_label(const LauncherModel* m) {
-    static char buf[8];
-    snprintf(buf, sizeof(buf), "%d%%", clampi(m->s.deadzone[0], 0, 50));
-    return buf;
 }
 
 void launcher_model_refresh_bios_status(LauncherModel* m) {
@@ -2910,7 +2902,9 @@ void launcher_model_set_memcard_path(LauncherModel* m, int slot, const char* pat
 
 void launcher_model_toggle_memcard(LauncherModel* m, int slot) {
     if (slot < 0 || slot > 1) return;
-    m->s.memcard_enabled[slot] = m->s.memcard_enabled[slot] ? 0 : 1;
+    m->s.memcard_enabled[slot] =
+        m->s.memcard_enabled[slot] == RECOMP_LAUNCHER_MEMCARD_ON
+            ? RECOMP_LAUNCHER_MEMCARD_OFF : RECOMP_LAUNCHER_MEMCARD_ON;
 }
 
 int launcher_model_multitap_available(const LauncherModel* m) {
