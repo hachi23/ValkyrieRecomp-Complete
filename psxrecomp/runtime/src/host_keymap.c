@@ -105,6 +105,8 @@ static void apply_defaults(void) {
         add_bind(HOST_KEYMAP_CHEAT_MENU, (int)SDLK_F5, (int)SDL_SCANCODE_F5, 0);
     if (s_actions[HOST_KEYMAP_DISC_SWAP].count == 0)
         add_bind(HOST_KEYMAP_DISC_SWAP, (int)SDLK_F6, (int)SDL_SCANCODE_F6, KMOD_SHIFT);
+    if (s_actions[HOST_KEYMAP_REINSERT_DISC].count == 0)
+        add_bind(HOST_KEYMAP_REINSERT_DISC, (int)SDLK_c, (int)SDL_SCANCODE_C, KMOD_CTRL);
 }
 
 /* Parse one "Ctrl+Alt+PageUp" token into key+mods. */
@@ -166,6 +168,7 @@ static HostKeymapAction action_for_key(const char *name) {
     if (ieq(name, "Scanlines")) return HOST_KEYMAP_SCANLINES;
     if (ieq(name, "TurboToggle")) return HOST_KEYMAP_TURBO_TOGGLE;
     if (ieq(name, "DiscSwap")) return HOST_KEYMAP_DISC_SWAP;
+    if (ieq(name, "ReinsertDisc")) return HOST_KEYMAP_REINSERT_DISC;
     return HOST_KEYMAP_ACTION_COUNT;
 }
 

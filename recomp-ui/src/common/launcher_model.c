@@ -54,7 +54,7 @@ static const char* kHotkeyNames[LNG_HK_COUNT] = {
     "FPS readout", "Toggle renderer",
     "Solar level up", "Solar level down", "Resume live solar",
     "Rewind", "Save states menu",
-    "Fast-forward toggle", "Quick menu", "Scanlines", "Change disc"
+    "Fast-forward toggle", "Quick menu", "Scanlines", "Change disc", "Reinsert disc"
 };
 static const char* kViewNames[7] = {
     "Dashboard", "Settings", "Controller", "Netplay", "Mods",
@@ -460,10 +460,12 @@ void launcher_model_init(LauncherModel* m,
         m->assist_fast_forward_min, m->assist_fast_forward_max);
     if (game && game->assist_default_key_bind &&
         game->assist_default_pad_bind) {
-        memcpy(m->default_assist_key_bind, game->assist_default_key_bind,
-               sizeof m->default_assist_key_bind);
-        memcpy(m->default_assist_pad_bind, game->assist_default_pad_bind,
-               sizeof m->default_assist_pad_bind);
+        /* The game's arrays hold assist_binding_count entries, no more. */
+        const size_t bytes = (size_t)m->assist_binding_count * sizeof(int);
+        memset(m->default_assist_key_bind, 0, sizeof m->default_assist_key_bind);
+        memset(m->default_assist_pad_bind, 0, sizeof m->default_assist_pad_bind);
+        memcpy(m->default_assist_key_bind, game->assist_default_key_bind, bytes);
+        memcpy(m->default_assist_pad_bind, game->assist_default_pad_bind, bytes);
         for (int i = 0; i < m->assist_binding_count; ++i) {
             if (m->s.assist_key_bind[i] == 0)
                 m->s.assist_key_bind[i] = m->default_assist_key_bind[i];

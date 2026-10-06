@@ -16,6 +16,8 @@ void ra_start(const char *username, const char *token, int hardcore, const char 
  * the token to be stored instead of the password and returns 1. */
 int  ra_login_password(const char *username, const char *password,
                        char *token_out, size_t token_cap, char *msg, size_t msg_cap);
+/* Tell the server which disc is now in the drive after a swap. */
+void ra_change_disc(const char *disc_path);
 void ra_on_vblank(void);
 /* 1 while hardcore is on and a game is loaded: cheats, save-state loading,
  * rewind and fast-forward must stay off. */

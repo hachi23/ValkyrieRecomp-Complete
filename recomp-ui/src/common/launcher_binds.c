@@ -181,7 +181,7 @@ static const char* kHotkeyKey[LNG_HK_COUNT] = {
     "DisplayPerf", "ToggleRenderer",
     "SolarBrighter", "SolarDimmer", "SolarLive",
     "Rewind", "SaveStateMenu",
-    "TurboToggle", "CheatMenu", "Scanlines", "DiscSwap"
+    "TurboToggle", "CheatMenu", "Scanlines", "DiscSwap", "ReinsertDisc"
 };
 // Built-in defaults (shown when config.ini has no line; "" = unbound).
 static const char* kHotkeyDef[LNG_HK_COUNT] = {
@@ -191,7 +191,7 @@ static const char* kHotkeyDef[LNG_HK_COUNT] = {
     "", "", "Keypad +", "Keypad -", "F", "R",
     "", "", "",
     "F8", "F7",
-    "F9", "F5", "F6", "Shift+F6"
+    "F9", "F5", "F6", "Shift+F6", "Ctrl+C"
 };
 
 static void copy_str(char* d, size_t cap, const char* s) {

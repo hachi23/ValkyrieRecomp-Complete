@@ -122,7 +122,8 @@ static const SystemProfile kSystemProfilePsx = {
                                    (1u << LNG_HK_TURBO_TOGGLE)    |
                                    (1u << LNG_HK_QUICK_MENU)      |
                                    (1u << LNG_HK_SCANLINES)       |
-                                   (1u << LNG_HK_DISC_SWAP)),
+                                   (1u << LNG_HK_DISC_SWAP)       |
+                                   (1u << LNG_HK_REINSERT_DISC)),
     /* panels_dashboard  */ kPanelsDashboardPsx,
     /* panels_settings   */ kPanelsSettingsPsx,
     /* panels_controller */ kPanelsControllerCommon,

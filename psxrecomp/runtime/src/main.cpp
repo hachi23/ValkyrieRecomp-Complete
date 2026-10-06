@@ -6480,9 +6480,22 @@ static void disc_swap_next(void) {
     }
     g_disc_current = next;
     savestate_set_disc_scope(next);
+    ra_change_disc(g_disc_roster[(size_t)next - 1].c_str());
     std::snprintf(msg, sizeof(msg), "Disc %d inserted", next);
     host_osd_push(msg, 2500);
     session_log_event("disc swap: disc %d mounted", next);
+}
+
+/* Open and close the lid on the same disc. Unsticks a game that waits on the
+ * drive (the old hidden Ctrl+C debug key). Refused in netplay like a swap. */
+static void disc_reinsert(void) {
+    if (psx_netplay_active()) {
+        host_osd_push("Disc reinsert unavailable in netplay", 2000);
+        return;
+    }
+    debug_force_cd_reinsert();
+    host_osd_push("Disc reinserted", 1500);
+    session_log_event("disc reinsert");
 }
 
 /* Debug-server hook ({"cmd":"disc_swap"}): same path as the Quick Menu row.
@@ -6510,7 +6523,7 @@ static int cheat_menu_pending_scale = 0;
 
 /* Quick menu rows. Header rows are section titles the cursor skips. */
 enum class CheatMenuRowKind {
-    Header, StateSlot, StateSave, StateLoad, Disc, FastForward,
+    Header, StateSlot, StateSave, StateLoad, Disc, ReinsertDisc, FastForward,
     Assist, Cheat, DisableAll, TextureFilter, Dedither, InternalResolution, Stretch
 };
 struct CheatMenuRow { CheatMenuRowKind kind; size_t cheat; const char* title; };
@@ -6533,6 +6546,7 @@ static std::vector<CheatMenuRow> cheat_menu_rows(void) {
     rows.push_back({CheatMenuRowKind::StateLoad, 0, nullptr});
     rows.push_back({CheatMenuRowKind::Header, 0, "GAME"});
     if (g_disc_roster.size() > 1) rows.push_back({CheatMenuRowKind::Disc, 0, nullptr});
+    rows.push_back({CheatMenuRowKind::ReinsertDisc, 0, nullptr});
     rows.push_back({CheatMenuRowKind::FastForward, 0, nullptr});
     const auto& cheats = psx_cheats_session().rows();
     if (!cheats.empty()) {
@@ -6588,6 +6602,10 @@ static void cheat_menu_sync_overlay(void) {
             values.push_back(value);
             break;
         }
+        case CheatMenuRowKind::ReinsertDisc:
+            labels.push_back("  REINSERT DISC");
+            values.push_back("");
+            break;
         case CheatMenuRowKind::FastForward:
             labels.push_back("  FAST FORWARD");
             values.push_back(g_manual_turbo_latched ? "ON" : "OFF");
@@ -6692,6 +6710,11 @@ static void cheat_menu_activate(void) {
         cheat_menu_open = 0;
         cheat_menu_sync_overlay();
         disc_swap_next();
+        return;
+    case CheatMenuRowKind::ReinsertDisc:
+        cheat_menu_open = 0;
+        cheat_menu_sync_overlay();
+        disc_reinsert();
         return;
     case CheatMenuRowKind::FastForward:
         fast_forward_toggle_flip();
@@ -7076,10 +7099,11 @@ static NetplayVblankEpilogue sdl_vblank_present_body(void) {
                                                  (int)mod)) {
                     cheat_menu_toggle();
                 }
-                else if (key == SDLK_c && (mod & KMOD_CTRL)) {
-                    std::fprintf(stdout, "[DEBUG] Forzando reinserción de CD...\n");
-                    debug_force_cd_reinsert();
-                    host_osd_push("CD reinsert", 1500);
+                else if (!key_repeat &&
+                         host_keymap_match_event(HOST_KEYMAP_REINSERT_DISC,
+                                                 (int)key, (int)scancode,
+                                                 (int)mod)) {
+                    disc_reinsert();
                 }
                 else if (!key_repeat &&
                          host_keymap_match_event(HOST_KEYMAP_DISC_SWAP,

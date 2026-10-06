@@ -102,6 +102,7 @@ typedef enum {
     LNG_HK_QUICK_MENU,      /* PSX in-game Quick Menu → [KeyMap] CheatMenu */
     LNG_HK_SCANLINES,       /* PSX scanline overlay → [KeyMap] Scanlines */
     LNG_HK_DISC_SWAP,       /* PSX change disc → [KeyMap] DiscSwap */
+    LNG_HK_REINSERT_DISC,   /* PSX lid open/close → [KeyMap] ReinsertDisc */
     LNG_HK_COUNT
 } LngHotkey;
 

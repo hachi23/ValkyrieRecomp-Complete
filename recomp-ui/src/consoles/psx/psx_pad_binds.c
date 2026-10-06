@@ -422,6 +422,27 @@ void rui_psx_pad_binds_delete(const char* path, const char* guid) {
     write_ini(s_path);
 }
 
+const char* rui_psx_pad_source_display(const char* sdl_name) {
+    static const struct { const char* sdl; const char* ps; } kNames[] = {
+        {"a", "Cross"}, {"b", "Circle"}, {"x", "Square"}, {"y", "Triangle"},
+        {"back", "Select"}, {"start", "Start"}, {"guide", "Home"},
+        {"leftshoulder", "L1"}, {"rightshoulder", "R1"},
+        {"lefttrigger", "L2"}, {"righttrigger", "R2"},
+        {"lefttrigger+", "L2"}, {"righttrigger+", "R2"},
+        {"leftstick", "L3"}, {"rightstick", "R3"},
+        {"dpup", "D-pad up"}, {"dpdown", "D-pad down"},
+        {"dpleft", "D-pad left"}, {"dpright", "D-pad right"},
+        {"leftx-", "Left stick left"}, {"leftx+", "Left stick right"},
+        {"lefty-", "Left stick up"}, {"lefty+", "Left stick down"},
+        {"rightx-", "Right stick left"}, {"rightx+", "Right stick right"},
+        {"righty-", "Right stick up"}, {"righty+", "Right stick down"},
+    };
+    if (!sdl_name) return "";
+    for (size_t i = 0; i < sizeof(kNames) / sizeof(kNames[0]); ++i)
+        if (strcmp(kNames[i].sdl, sdl_name) == 0) return kNames[i].ps;
+    return sdl_name;
+}
+
 void rui_psx_pad_binds_label(const char* path, const char* guid, int b,
                              char* out, int cap) {
     ensure_init(path);
@@ -439,7 +460,7 @@ void rui_psx_pad_binds_label(const char* path, const char* guid, int b,
     if (!src || !src[0]) src = s_global[b];
     if (!src || !src[0]) src = kPsxPadDefaults[b];
     if (!src || !src[0]) copy_str(out, (size_t)cap, "(unbound)");
-    else copy_str(out, (size_t)cap, src);
+    else copy_str(out, (size_t)cap, rui_psx_pad_source_display(src));
 }
 
 void rui_psx_pad_binds_set(const char* path, const char* guid, int b,

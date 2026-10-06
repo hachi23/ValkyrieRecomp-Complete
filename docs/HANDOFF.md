@@ -1,4 +1,4 @@
-# Handoff, 2026-10-06 (night, Windows play PC)
+# Handoff, 2026-10-06 (evening, Windows play PC)
 
 This is the **all-in-one repo** for the ValkyrieRecomp fork
 (`hachi23/ValkyrieRecomp-Complete`). It replaces the old three-repo setup.
@@ -71,7 +71,7 @@ Changes made here after the import (first commit):
     `psxrecomp/runtime/include/overlay_codegen_hash.h`. Copied from the old
     checkout. `tools/dev/gen.sh` and `tools/dev/bios.sh` regenerate them.
   - `saves/` (memory cards and save states), `build-win/` (built from
-    scratch here on 2026-10-06; DLLs copied with `tools/dev/deps.sh`).
+    scratch here on 2026-10-06).
 - Old checkout `D:\Emulation\Recomps\Valkyrie\Valkyrie-recomp` still exists
   and is fully pushed. Do not work there.
 - Play package for the owner: `D:\Emulation\Recomps\Valkyrie\ValkyrieRecomp-Play`
@@ -85,8 +85,8 @@ Scripts are in `tools/dev/` (see its README). Run them through PowerShell:
 `& C:\msys64\usr\bin\bash.exe -l tools/dev/build.sh`. Running them from the
 Bash tool fails in ccache because `USERPROFILE` is missing there.
 
-- Build: `tools/dev/build.sh`. A fresh `build-win/` also needs
-  `tools/dev/deps.sh` (copies the MinGW DLLs) or the exe exits 0xC0000135.
+- Build: `tools/dev/build.sh`. It also copies the MinGW DLLs next to the exe
+  (`psxrecomp/tools/bundle_mingw_dlls.sh`), so a fresh `build-win/` starts.
 - Run for agents: `build-win\ValkyrieRecomp.exe --no-launcher --debug-port 4398
   --memcard-dir <repo>\saves --renderer vulkan --disc "<repo>\disc\Disc1\...cue"`
   with `PSX_BIOS_HLE=0`. Debug commands: `savestate op=save|load slot=N`,
@@ -107,25 +107,65 @@ Bash tool fails in ccache because `USERPROFILE` is missing there.
   `& C:\msys64\usr\bin\bash.exe -l tools/dev/check.sh` (build, tests, TCP
   docs, launcher smoke). Phase 0 of `docs/CLEANUP_PLAN.md` is done.
 
-## State at handoff
+## State at handoff (2026-10-06 night, Phase 1 done)
 
-Working and verified on Vulkan at 60 fps: title, opening movie, New Game,
-Valhalla, world map, save states, Quick Menu (F5), disc swap (Quick Menu,
-`[KeyMap] DiscSwap`, `disc_swap` debug command), Stretch to fill, Diorama
-launcher theme, Settings > HOTKEYS with keyboard and controller columns,
-launcher text size.
+### Pick up here
 
-Not verified: battle, a real Disc 2 load from a late save, controller presses
-on the new pad shortcuts (no pad connected), memory-card saves across a
-restart, RetroAchievements.
+Branch `cleanup/phase-1`, **uncommitted** work, Phase 1 complete (builds,
+`check.sh` says CHECK OK, 47/47 tests). `main` = `9fd28f6` (owner bug fixes + Phase 0),
+pushed. Commit Phase 1 on this branch only after the owner says so.
+
+Phase 1 of `docs/CLEANUP_PLAN.md`, item by item:
+
+| # | Item | State | Evidence |
+|---|---|---|---|
+| 1 | Relative paths | Done, verified | `load_user_settings` anchors bios/disc/memcard paths to the settings file's folder; `save_user_settings` writes paths inside it relative (`config_loader.cpp`). Before: started from another folder, blank `card1/2.mcd` were created in `<start>/../saves`. After: a moved copy of the play folder started from `C:\Windows\Temp` loaded disc + RA, and PLAY rewrote an absolute disc path to `disc/...` |
+| 2 | Freeze dumps into `logs/` | Done, verified | `freeze_heartbeat.c` writes dumps and `psx_freeze_heartbeat.json` under `session_log_dir()` (new accessor). `psx_last_run_report.json` still goes to the current folder (already archived in `logs/crashes/`) |
+| 3 | DLL bundling | Done, verified | `bundle_mingw_dlls.sh` stopped at `Secur32.dll`; added common OS DLLs to the list and a System32 fallback on Windows. `build.sh` now runs it; `tools/dev/deps.sh` deleted. Bare exe: 0xC0000135 before, exit 0 after |
+| 4 | Vulkan menu scale | Done earlier (`4d18101`) | |
+| 5 | Ctrl+C to `[KeyMap] ReinsertDisc` | Done, verified | Quick Menu REINSERT DISC showed "Disc reinserted", logged `disc reinsert`, game kept running. Launcher HOTKEYS shows Reinsert disc = Ctrl+C. The Ctrl+C key itself was not pressed (keypost cannot carry modifiers) |
+| 6 | PlayStation button names | Done, verified | Launcher Controller page: Cross, Triangle, Left stick up. HOTKEYS: Triangle + Select, Select + R3 |
+| 7 | Tell RA about disc changes | Done, verified | `ra_change_disc()` in `ra_host.{h,cpp}` (no-op until the set is loaded), called from `disc_swap_next()`. Logged in as hachi11, `disc_swap` to 2 and back logged `retroachievements: disc change accepted` |
+| 8 | Bound `assist_default_*_bind` copy; stale `game.toml` comment | Done | Copy bounded by `assist_binding_count` in `launcher_model.c` (NDS passes 2 entries, old code read 8). `game.toml` comment was already fixed at import |
+
+Remaining before commit: the owner's go. Then refresh the play package if
+not done (see Next steps), commit Phase 1 on `cleanup/phase-1`, merge.
+
+Test copy: the scratchpad `ratest` folder is a copy of the play package
+with the new exe and RA token. Nothing in the repo depends on it.
+
+### Owner decisions this session
+
+- Fullscreen bug and achievement pop-up style: owner said ignore for now.
+- Merging to `main` is approved for finished work; ask before each commit.
+
+### Local test state
+
+- `build-win/settings.toml` was restored to its original (it still points
+  at the old `Valkyrie-recomp` checkout; that is finding D, harmless now
+  that paths load relative).
+- Play package `settings.toml` holds the owner's RA token (user hachi11).
+  Never commit it.
+- Scratch copies live under the session scratchpad (`MovedInstall`,
+  `fresh`); nothing in the repo depends on them.
+
+### Verified game state
+
+Working on Vulkan at 60 fps: title, New Game, Valhalla, world map, save
+states, Quick Menu, disc swap, Stretch to fill, launcher, RetroAchievements
+login (game 11249, 174 achievements), 16x internal resolution.
+
+Not verified: battle, a real Disc 2 load from a late save, controller
+presses (no pad connected), fullscreen symptom the owner reported (could not
+reproduce; owner deferred it).
 
 ## Next steps
 
-1. Execute `docs/CLEANUP_PLAN.md` Phase 0 (fix or replace the 8 failing
-   tests, add `tools/dev/check.sh`). Item 2 of Phase 0 is already done.
-2. Then Phase 1 quick seam fixes, Phase 2 single source of truth, Phase 3
-   file splits.
-3. Update the "Working with submodules" section of `AGENTS.md` for the
-   single repo.
-4. Owner's open wishes from earlier: modern button prompts, HD textures or
-   screen shaders for less pixelated art.
+1. Owner go for the Phase 1 commit; the owner still needs to press Ctrl+C
+   in game and try the pad shortcuts.
+2. Finding J (freeze dumps of 30 to 130 MB in normal play). Quick win.
+3. Phase 2 single source of truth (settings table, hotkey catalog). Item 5
+   showed finding B again: one hotkey touched 6 files in 2 projects.
+4. Phase 3 file splits.
+5. Update the "Working with submodules" section of `AGENTS.md`.
+6. Findings I1/I2 in `docs/CLEANUP_PLAN.md`.

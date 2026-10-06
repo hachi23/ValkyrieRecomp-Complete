@@ -21,6 +21,8 @@ void session_log_note_state_load(int slot);
 void session_log_close(void);
 
 const char *session_log_path(void);
+/* The logs folder given to session_log_open, or "" before it is opened. */
+const char *session_log_dir(void);
 /* Text from a previous run's leftover marker, or NULL. Valid until exit. */
 const char *session_log_previous_crash(void);
 

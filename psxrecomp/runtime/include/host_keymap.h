@@ -25,6 +25,7 @@ typedef enum HostKeymapAction {
     HOST_KEYMAP_TURBO_TOGGLE,     /* default F9; latches Turbo until pressed again */
     HOST_KEYMAP_CHEAT_MENU,       /* default F5 */
     HOST_KEYMAP_DISC_SWAP,        /* default Shift+F6; mount the next disc */
+    HOST_KEYMAP_REINSERT_DISC,    /* default Ctrl+C; open and close the lid */
     HOST_KEYMAP_ACTION_COUNT
 } HostKeymapAction;
 

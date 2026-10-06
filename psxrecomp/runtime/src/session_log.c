@@ -174,6 +174,8 @@ void session_log_close(void) {
 
 const char *session_log_path(void) { return s_path; }
 
+const char *session_log_dir(void) { return s_dir; }
+
 const char *session_log_previous_crash(void) { return s_have_previous ? s_previous : NULL; }
 
 static size_t append_escaped(char *out, size_t cap, size_t pos, const char *s) {

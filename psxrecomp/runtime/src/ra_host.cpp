@@ -11,6 +11,7 @@ int  ra_login_password(const char *, const char *, char *, size_t, char *msg, si
     if (msg && cap) std::snprintf(msg, cap, "This build has no RetroAchievements support.");
     return 0;
 }
+void ra_change_disc(const char *) {}
 void ra_on_vblank(void) {}
 int  ra_hardcore_active(void) { return 0; }
 void ra_status(char *out, size_t cap) { if (out && cap) std::snprintf(out, cap, "unavailable"); }
@@ -169,6 +170,15 @@ void on_login(int result, const char *error, rc_client_t *client, void *) {
                                            nullptr, 0, on_game_loaded, nullptr);
 }
 
+void on_disc_changed(int result, const char *error, rc_client_t *, void *) {
+    if (result == RC_OK) {
+        session_log_event("retroachievements: disc change accepted");
+        return;
+    }
+    toast(std::string("RetroAchievements: ") + (error ? error : "disc not recognised"));
+    session_log_event("retroachievements: disc change failed (%s)", error ? error : "?");
+}
+
 rc_client_t *make_client(void) {
     static std::once_flag once;
     std::call_once(once, [] {
@@ -195,6 +205,13 @@ void ra_start(const char *username, const char *token, int hardcore, const char 
     g_hardcore_requested = hardcore ? 1 : 0;
     rc_client_set_hardcore_enabled(g_client, hardcore ? 1 : 0);
     rc_client_begin_login_with_token(g_client, username, token, on_login, nullptr);
+}
+
+void ra_change_disc(const char *disc_path) {
+    /* Before the set loads, every disc of the game identifies the same set. */
+    if (!g_client || !disc_path || !g_game_loaded) return;
+    rc_client_begin_identify_and_change_media(g_client, disc_path, nullptr, 0,
+                                              on_disc_changed, nullptr);
 }
 
 int ra_login_password(const char *username, const char *password, char *token_out,

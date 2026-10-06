@@ -22,6 +22,7 @@
 #include "launcher_system.h"
 #include "launcher_i18n.h"
 #include "consoles/n64/n64_binds.h"   // RUI_N64_FIELD_* for the pad-capture path
+#include "consoles/psx/psx_pad_binds.h" // PlayStation button names
 
 #include "launcher_sdlcompat.h"   // pulls the right SDL header + event shim
 
@@ -3614,7 +3615,11 @@ void panel_solar_draw(LauncherModel* m, const LauncherTheme* th) {
 // a narrower everyday-transport subset (launcher_system.h), so its grid packs
 // only the set bits — no holes, columns re-wrap around the smaller count.
 const char* settings_key_label(int scancode);
-void settings_pad_label(int binding, char* out, size_t capacity);
+void settings_pad_label(int binding, char* out, size_t capacity, bool psx_names);
+
+static bool is_psx_profile(const LauncherModel* m) {
+    return m && m->profile && lps_streq_ci(m->profile->id, "psx");
+}
 
 // [KeyMap] hotkey that is the keyboard twin of assist action `action`, or -1
 // (GameInfo.assist_binding_hotkeys; absent => the legacy assist_key_bind).
@@ -3663,7 +3668,7 @@ static void draw_assist_pad_button(LauncherModel* m, const LauncherTheme& th,
     const bool capture_pad = m->capturing && m->capture_assist &&
                              m->capture_pad && m->capture_btn == action;
     char pad[48];
-    settings_pad_label(m->s.assist_pad_bind[action], pad, sizeof pad);
+    settings_pad_label(m->s.assist_pad_bind[action], pad, sizeof pad, is_psx_profile(m));
     if (capture_pad) ImGui::PushStyleColor(ImGuiCol_Button, col(th.accent));
     if (ImGui::Button(capture_pad ? "[ press a button... ]" : pad, ImVec2(width, 0)))
         launcher_model_begin_assist_capture(m, action, true);
@@ -3890,9 +3895,10 @@ const char* settings_key_label(int scancode) {
     return (name && name[0]) ? name : "(unbound)";
 }
 
-static const char* settings_pad_button_label(int code) {
+static const char* settings_pad_button_label(int code, bool psx_names = false) {
     const char* name = SDL_GetGamepadStringForButton((LNG_GamepadButton)code);
     if (!name || !name[0]) return "button";
+    if (psx_names) return rui_psx_pad_source_display(name);
     if (!std::strcmp(name, "back")) return "select";
     if (!std::strcmp(name, "leftstick")) return "l3";
     if (!std::strcmp(name, "rightstick")) return "r3";
@@ -3914,19 +3920,20 @@ static int button_mask_count(uint32_t mask) {
     return n;
 }
 
-void settings_pad_label(int binding, char* out, size_t capacity) {
+void settings_pad_label(int binding, char* out, size_t capacity, bool psx_names) {
     if (!out || !capacity) return;
     const char* name = nullptr;
     char text[96] = {};
     if (RECOMP_LAUNCHER_PAD_IS_BUTTON(binding)) {
         int code = RECOMP_LAUNCHER_PAD_BUTTON_CODE(binding);
-        snprintf(text, sizeof text, "%s", settings_pad_button_label(code));
+        snprintf(text, sizeof text, "%s", settings_pad_button_label(code, psx_names));
     } else if (RECOMP_LAUNCHER_PAD_IS_AXIS(binding)) {
         int code = RECOMP_LAUNCHER_PAD_AXIS_CODE(binding);
         name = SDL_GetGamepadStringForAxis((LNG_GamepadAxis)code);
         snprintf(text, sizeof text, "%s%c",
                  (name && name[0]) ? name : "axis",
                  RECOMP_LAUNCHER_PAD_AXIS_POSITIVE(binding) ? '+' : '-');
+        if (psx_names) snprintf(text, sizeof text, "%s", rui_psx_pad_source_display(text));
     } else if (RECOMP_LAUNCHER_PAD_IS_BUTTON_COMBO(binding)) {
         uint32_t mask = (uint32_t)RECOMP_LAUNCHER_PAD_BUTTON_COMBO_MASK(binding);
         for (int code = 0; code < 32; ++code) {
@@ -3934,7 +3941,7 @@ void settings_pad_label(int binding, char* out, size_t capacity) {
                 continue;
             if (text[0])
                 strncat(text, " + ", sizeof(text) - strlen(text) - 1);
-            strncat(text, settings_pad_button_label(code),
+            strncat(text, settings_pad_button_label(code, psx_names),
                     sizeof(text) - strlen(text) - 1);
         }
         if (!text[0])
@@ -4934,7 +4941,8 @@ void draw_controller_config_view(LauncherModel* m, const LauncherTheme& th) {
                         const bool cap_pad = m->capturing && m->capture_pad && m->capture_btn == b;
                         char settings_pad[48];
                         settings_pad_label(m->s.player_pad_bind[p][b],
-                                           settings_pad, sizeof settings_pad);
+                                           settings_pad, sizeof settings_pad,
+                                           is_psx_profile(m));
                         const char* pl = settings_player_binds
                             ? settings_pad
                             : (m->pad_binds[p][b][0]

@@ -168,7 +168,31 @@ Original plan:
    runs `gen_tcp_commands.py --check`, and runs the launcher screenshot
    smoke test. Run it before every commit.
 
-### Phase 1. Quick seam fixes (one or two sessions)
+### Phase 1. Quick seam fixes (done 2026-10-06)
+
+Result: all 8 items done and checked on the real surface, `check.sh` says
+CHECK OK with 47 of 47 tests (Measured). Items 1 to 3 were measured in the
+earlier session (see `docs/HANDOFF.md`). Item 5: Quick Menu REINSERT DISC
+showed the toast, logged `disc reinsert`, and the game kept running; the
+launcher HOTKEYS page lists Reinsert disc as Ctrl+C. Item 6: the Controller
+page reads Cross, Triangle, Left stick up, and HOTKEYS reads
+Triangle + Select. Item 7: `ra_change_disc()` in `ra_host.cpp`, called from
+`disc_swap_next()`; with RA logged in, swapping to Disc 2 and back logged
+`retroachievements: disc change accepted` both times. A swap before the
+set loads is ignored, since every disc of the game names the same set.
+Item 8: the copy now takes `assist_binding_count` entries. The NDS profile
+passes 2 (`nds_profile.h:34,107`), so the old code read 6 ints past its
+array. The `game.toml` comment was already fixed at import (`1a3729d`).
+
+New finding from this phase:
+
+- **J.** Freeze dumps are written during normal play. A 90 second test run
+  wrote two (29 MB at startup, 102 MB around a save-state load) into
+  `logs/` (Measured). The play package root holds a 131 MB one. Guess: the
+  heartbeat treats long loads as freezes. Over weeks this fills the disk.
+  Quick win: find the trigger, raise its threshold or keep only the last N.
+
+Original items:
 
 1. Resolve relative disc, memory-card and BIOS paths against the exe's
    folder, and write them back relative when they are inside it (finding D).

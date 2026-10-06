@@ -2286,6 +2286,13 @@ UserSettings load_user_settings(const fs::path& path) {
 
     // Each field guarded independently so one bad value can't blank the rest.
     auto try_get = [](auto&& fn) { try { fn(); } catch (const std::exception&) {} };
+    // Relative paths are relative to this file's folder (the install), never to
+    // the process's current folder, so a shortcut or a moved install still works.
+    const fs::path base = fs::absolute(path, ec).parent_path();
+    auto anchored = [&](const std::string& p) {
+        const fs::path q(p);
+        return q.is_relative() ? (base / q).lexically_normal() : q;
+    };
     if (doc.contains("assist_tools")) try_get([&] {
         const auto& a = toml::find(doc, "assist_tools");
         if (a.contains("enabled")) {
@@ -2541,14 +2548,14 @@ UserSettings load_user_settings(const fs::path& path) {
         const toml::value& b = toml::find(doc, "bios");
         if (b.contains("path")) try_get([&]{
             const auto p = toml::find<std::string>(b, "path");
-            if (!p.empty()) { s.bios_path = fs::path(p); s.has_bios_path = true; }
+            if (!p.empty()) { s.bios_path = anchored(p); s.has_bios_path = true; }
         });
     }
     if (doc.contains("disc")) {
         const toml::value& d = toml::find(doc, "disc");
         if (d.contains("path")) try_get([&]{
             const auto p = toml::find<std::string>(d, "path");
-            if (!p.empty()) { s.disc_path = fs::path(p); s.has_disc_path = true; }
+            if (!p.empty()) { s.disc_path = anchored(p); s.has_disc_path = true; }
         });
         /* Multi-disc selection, 1-based. Anything below 1 is a malformed
          * hand-edit, not a request to boot disc 0 -- clamp up and keep going
@@ -2564,15 +2571,15 @@ UserSettings load_user_settings(const fs::path& path) {
         const toml::value& m = toml::find(doc, "memcard");
         if (m.contains("dir")) try_get([&]{
             const auto p = toml::find<std::string>(m, "dir");
-            if (!p.empty()) { s.memcard_dir = fs::path(p); s.has_memcard_dir = true; }
+            if (!p.empty()) { s.memcard_dir = anchored(p); s.has_memcard_dir = true; }
         });
         if (m.contains("card1")) try_get([&]{
             const auto p = toml::find<std::string>(m, "card1");
-            if (!p.empty()) { s.memcard1_path = fs::path(p); s.has_memcard1_path = true; }
+            if (!p.empty()) { s.memcard1_path = anchored(p); s.has_memcard1_path = true; }
         });
         if (m.contains("card2")) try_get([&]{
             const auto p = toml::find<std::string>(m, "card2");
-            if (!p.empty()) { s.memcard2_path = fs::path(p); s.has_memcard2_path = true; }
+            if (!p.empty()) { s.memcard2_path = anchored(p); s.has_memcard2_path = true; }
         });
         if (m.contains("enable1")) try_get([&]{
             s.memcard1_enabled = toml::find<bool>(m, "enable1"); s.has_memcard1_enabled = true;
@@ -2688,9 +2695,14 @@ bool save_user_settings(const fs::path& path, const UserSettings& s) {
     if (!f.is_open()) return false;
 
     // TOML strings use forward slashes so backslash escaping is never an issue.
-    auto fwd = [](const fs::path& p) {
-        std::string str = p.generic_string();
-        return str;
+    // Paths inside the install are written relative so the folder can move.
+    const fs::path base = fs::absolute(path, ec).parent_path().lexically_normal();
+    auto fwd = [&](const fs::path& p) {
+        if (p.is_absolute()) {
+            const fs::path rel = p.lexically_normal().lexically_relative(base);
+            if (!rel.empty() && *rel.begin() != "..") return rel.generic_string();
+        }
+        return p.generic_string();
     };
 
     f << "# psxrecomp user settings - written by the launcher. Safe to hand-edit.\n";

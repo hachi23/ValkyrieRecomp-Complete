@@ -106,7 +106,7 @@ else
   exit 1
 fi
 
-SYSTEM_DLL_RE='^(KERNEL32|USER32|GDI32|ADVAPI32|SHELL32|OLE32|OLEAUT32|WS2_32|WINMM|IMM32|SETUPAPI|VERSION|OPENGL32|COMCTL32|COMDLG32|RPCRT4|SHLWAPI|CRYPT32|BCRYPT|IPHLPAPI|NSI|DNSAPI|MSVCRT|UCRTBASE|VCRUNTIME|DBGHELP|API-MS-).*\.DLL$'
+SYSTEM_DLL_RE='^(KERNEL32|USER32|GDI32|ADVAPI32|SHELL32|OLE32|OLEAUT32|WS2_32|WINMM|IMM32|SETUPAPI|VERSION|OPENGL32|COMCTL32|COMDLG32|RPCRT4|SHLWAPI|CRYPT32|BCRYPT|IPHLPAPI|NSI|DNSAPI|MSVCRT|UCRTBASE|VCRUNTIME|DBGHELP|SECUR32|WLDAP32|NORMALIZ|USERENV|HID|DWMAPI|DXGI|D3D[0-9]*|CFGMGR32|POWRPROF|UXTHEME|PSAPI|NTDLL|API-MS-).*\.DLL$'
 
 PROBE_DLLS=(
   SDL2.dll
@@ -284,6 +284,12 @@ bundle_one() {
     dll="${queue[$i]}"
     i=$((i + 1))
     src="$(find_dll_src "${dll}" "${exe}" "${dest_dir}" || true)"
+    # On Windows, a DLL found nowhere but System32 ships with the OS, whatever
+    # SYSTEM_DLL_RE says; the hard-coded list alone kept going stale.
+    if [[ -z "${src}" ]] && [[ -n "${SYSTEMROOT:-}" ]] && command -v cygpath >/dev/null 2>&1 &&
+       [[ -f "$(cygpath -u "${SYSTEMROOT}")/System32/${dll}" ]]; then
+      continue
+    fi
     if [[ -z "${src}" ]]; then
       echo "error: required DLL missing for ${label}: ${dll}" >&2
       echo "  exe: ${exe}" >&2

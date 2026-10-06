@@ -11,6 +11,11 @@ if [[ ! -f build-win/build.ninja ]]; then
 fi
 cmake --build build-win --target psx-runtime -j16 > "$S/build.log" 2>&1
 rc=$?
+if [[ $rc -eq 0 ]]; then
+  ./psxrecomp/tools/bundle_mingw_dlls.sh --exe build-win/ValkyrieRecomp.exe >> "$S/build.log" 2>&1
+  rc=$?
+  [[ $rc -ne 0 ]] && echo "DLL BUNDLING FAILED (see tools/dev/build.log)"
+fi
 grep -E "error|FAILED" "$S/build.log" | head -30
 tail -3 "$S/build.log"
 echo "BUILD rc=$rc"

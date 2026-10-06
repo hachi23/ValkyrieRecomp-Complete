@@ -808,3 +808,52 @@ Words learned:
 - Regression: something that used to work and broke again.
 - Smoke test: a quick "does it even start" check.
 - Stub: a stand-in piece that lets a test run part of a program on its own.
+
+## 2026-10-06: Phase 1, quick seam fixes
+
+A "seam" is a place where two parts of the program meet and only work
+because someone kept them in step by hand. Phase 1 fixed seven small ones.
+
+- **The game finds its files wherever you put it.** Settings used to store
+  full addresses like `D:/.../disc/...`. Move the folder, or start the game
+  from a shortcut, and it looked in the wrong place and made blank memory
+  cards. Now a path inside the game folder is stored as "next to me"
+  (`disc/Disc1/...`), like a save that remembers "third room on the left"
+  instead of a street address.
+- **Crash snapshots go into `logs/`.** When the game seems frozen it writes
+  a snapshot of its memory (a "freeze dump") so we can see where it hung.
+  Those used to land in whatever folder you started from.
+- **A fresh build starts on its own.** The game needs helper files (DLLs,
+  shared libraries other programs also use) next to it. The copy script
+  stopped halfway, so a fresh build refused to start. It now copies all of
+  them, and the build runs it.
+- **Reinsert disc is a real hotkey.** Ctrl+C was a hidden debug key that
+  opens and closes the virtual disc lid. It now has a Quick Menu row, a
+  HOTKEYS row in the launcher, and you can rebind it. Useful if the game
+  ever waits forever on the drive.
+- **PlayStation button names.** The launcher showed Xbox-style names ("y",
+  "r3"). It now says Triangle, Cross, R3, Left stick up.
+- **Achievements follow disc changes.** RetroAchievements identifies a disc
+  by its fingerprint (a "hash", a short code computed from the disc's
+  data). When you swap to Disc 2, the game now tells the server, and the
+  server confirmed it ("disc change accepted" in the log).
+- **No reading past the end of a list.** The launcher copied 8 shortcut
+  defaults from every game, even games that only have 2. Reading past the
+  end of a list reads random memory. Valkyrie was safe; the Nintendo DS
+  version was not. It now copies exactly as many as the game has.
+
+Tested for real: Quick Menu > REINSERT DISC showed "Disc reinserted" and
+the game kept running; the launcher's Controller and HOTKEYS pages show
+PlayStation names and the Ctrl+C row; swapping discs with achievements on
+logged "disc change accepted" both ways; all 47 tests pass.
+
+Still for you to try: press Ctrl+C on the keyboard in game, and the
+controller shortcuts on a real pad.
+
+Words learned:
+
+- Seam: where two parts of a program meet and must agree.
+- Relative path: an address that starts from the game's own folder.
+- DLL: a shared helper file a program loads when it starts.
+- Hash: a short fingerprint computed from a file, used to recognise it.
+- Out-of-bounds read: reading past the end of a list into unrelated memory.

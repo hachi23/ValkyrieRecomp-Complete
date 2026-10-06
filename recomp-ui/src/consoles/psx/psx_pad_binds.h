@@ -32,6 +32,10 @@ void rui_psx_pad_binds_init(const char* path);
 void rui_psx_pad_binds_label(const char* path, const char* guid, int b,
                              char* out, int cap);
 
+// PlayStation name for an SDL gamepad source ("y" -> "Triangle", "leftx-" ->
+// "Left stick left"). Unknown names come back unchanged.
+const char* rui_psx_pad_source_display(const char* sdl_name);
+
 // Rebind button `b` for `guid`. kind: 0 none, 1 button, 2 axis.
 void rui_psx_pad_binds_set(const char* path, const char* guid, int b,
                            int kind, int code, int axis_dir);

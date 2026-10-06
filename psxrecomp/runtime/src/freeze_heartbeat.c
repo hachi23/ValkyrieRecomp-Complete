@@ -5,6 +5,7 @@
 #include "debug_server.h"
 #include "crash_trace.h"   /* g_psx_fatal_reason */
 #include "cpu_state.h"     /* g_psx_bail_* call-contract counters */
+#include "session_log.h"   /* logs folder next to the exe */
 
 #include <stdint.h>
 #include <stdio.h>
@@ -75,6 +76,8 @@ extern uint8_t *g_psx_ram;                         /* memory.c — 2 MiB DRAM */
 
 static int s_started = 0;
 static char s_backend[32] = "psx-runtime";
+/* "<exe>/logs/" once the session log is open, else "" (current folder). */
+static char s_out_dir[520] = "";
 
 #ifdef _WIN32
 static HANDLE s_thread = NULL;
@@ -481,12 +484,13 @@ static int freeze_dump_write(long long wall, uint64_t frame, uint64_t cyc,
         return 0;
 #endif
 
-    char path[128];
+    char name[128], path[660];
     uint32_t sequence = s_dump_sequence++;
-    if (!freeze_dump_format_path(path, sizeof(path), s_backend, wall, sequence)) {
+    if (!freeze_dump_format_path(name, sizeof(name), s_backend, wall, sequence)) {
         freeze_dump_unlock();
         return 0;
     }
+    snprintf(path, sizeof(path), "%s%s", s_out_dir, name);
 
     FILE *f = fopen(path, "wb");
     if (!f) { freeze_dump_unlock(); return 0; }
@@ -1044,8 +1048,9 @@ static void heartbeat_write(void) {
     /* Atomic overwrite via .tmp + rename. Avoids a reader catching a
      * mid-write file and parsing partial JSON. Cheap on Windows
      * (MoveFileEx with REPLACE_EXISTING). */
-    char tmp_path[64];
-    snprintf(tmp_path, sizeof(tmp_path), HB_FILE ".tmp");
+    char hb_path[560], tmp_path[570];
+    snprintf(hb_path, sizeof(hb_path), "%s" HB_FILE, s_out_dir);
+    snprintf(tmp_path, sizeof(tmp_path), "%s.tmp", hb_path);
 
     FILE *f = fopen(tmp_path, "wb");
     if (!f) return;
@@ -1053,10 +1058,10 @@ static void heartbeat_write(void) {
     fclose(f);
 
 #ifdef _WIN32
-    MoveFileExA(tmp_path, HB_FILE,
+    MoveFileExA(tmp_path, hb_path,
                 MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH);
 #else
-    rename(tmp_path, HB_FILE);
+    rename(tmp_path, hb_path);
 #endif
 }
 
@@ -1084,6 +1089,8 @@ void freeze_heartbeat_start(const char *backend_label) {
         memcpy(s_backend, backend_label, n);
         s_backend[n] = 0;
     }
+    if (session_log_dir()[0])
+        snprintf(s_out_dir, sizeof(s_out_dir), "%s/", session_log_dir());
 #ifdef _WIN32
     /* Duplicate the main thread's pseudo-handle into a real handle so the
      * heartbeat thread can SuspendThread/GetThreadContext for stack capture

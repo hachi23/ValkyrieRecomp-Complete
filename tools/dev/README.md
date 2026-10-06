@@ -10,9 +10,8 @@ themselves.
 | `env.sh` | Shared MinGW64 + Vulkan environment, `cd` to the repo root |
 | `gen.sh` | Build the emitters, verify both discs, generate the game C into `generated/` |
 | `bios.sh` | Regenerate the OpenBIOS C, then build |
-| `build.sh` | Configure `build-win/` if needed and build `psx-runtime` (log: `build.log`) |
+| `build.sh` | Configure `build-win/` if needed, build `psx-runtime`, copy the MinGW DLLs next to it (log: `build.log`) |
 | `check.sh` | Build, run all runtime tests, check `docs/TCP_COMMANDS.md`, launcher screenshot. Run before every commit |
-| `deps.sh` | Copy the MinGW DLLs the exe needs into `build-win/` (needed after a fresh `build-win`) |
 | `dbg.py <cmd> k=v` | One debug-server command (port 4398) |
 | `press.py`, `advance.py`, `newgame.py` | Queue pad input routes through the debug server |
 | `ram.py`, `scan_w.py`, `census_sum.py`, `widen_test.py` | RAM and widescreen research helpers |
@@ -20,4 +19,4 @@ themselves.
 | `wincap.ps1 -Out x.png` | Capture the game window only (PrintWindow). Never capture the desktop |
 
 Fresh checkout order: `gen.sh` (or copy `generated/`), `bios.sh`,
-`build.sh`, `deps.sh`.
+`build.sh`.
