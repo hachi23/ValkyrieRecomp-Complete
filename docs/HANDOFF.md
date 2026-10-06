@@ -159,6 +159,17 @@ Not verified: battle, a real Disc 2 load from a late save, controller
 presses (no pad connected), fullscreen symptom the owner reported (could not
 reproduce; owner deferred it).
 
+## Linux build (2026-10-06)
+
+Built in WSL Ubuntu 26.04 (`~/vr`, a local clone plus the copied generated
+C): `bash tools/dev/build_linux.sh`, then `tools/dev/package_linux.sh`.
+Output: `D:\Emulation\Recomps\Valkyrie\ValkyrieRecomp-Linux.tar` (1.5 GB,
+discs and the owner's saves included, no settings.toml so no RA token).
+Measured in WSL: OpenGL and Vulkan (llvmpipe, WSL has no AMD Vulkan) reach
+the title screen at 60 fps; the unpacked tarball's launcher finds the disc
+and PLAY boots. Needs glibc 2.43+ (built on Ubuntu 26.04). Not tested on real
+Linux hardware, a controller, or audio.
+
 ## Next steps
 
 `main` has Phase 1, finding J, Phase 2 and finding K, pushed. Netplay is

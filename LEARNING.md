@@ -968,3 +968,33 @@ Words learned:
 - Deadzone: the small stick movement the game ignores, to stop drift.
 - Sentinel value: a special number that means "not set" instead of a real
   choice; trouble starts when it is also a real choice.
+
+## 2026-10-06: Fullscreen, widescreen and a Linux version
+
+**The fullscreen bug.** It was really a window-size bug. Your taskbar hides
+itself, so the game made its picture the full height of the screen and
+forgot the title bar on top. The window spilled off the top and bottom and
+sat in the middle with the desktop showing at the sides: it looked like a
+broken borderless fullscreen. The window now shrinks a little, keeping its
+shape, until the whole thing fits. Real fullscreen (Alt+Enter) was fine all
+along and still fills the screen.
+
+**Widescreen.** Nobody has made a widescreen patch for the PS1 Valkyrie
+Profile. Its towns, dungeons and battles are flat painted layers drawn only
+for a 4:3 screen, so showing more would mean finding and changing the
+drawing code for each kind of scene, and the edges of rooms have no artwork
+to show. Stretch to fill stays the practical choice.
+
+**Linux.** The same source code was compiled for Linux inside WSL (a Linux
+system that runs inside Windows). The translated game code is the same on
+both; only the outer program is rebuilt. `ValkyrieRecomp-Linux.tar` holds the
+game, both discs and your saves. Unpack it on Linux with `tar -xf` and run
+`./play.sh`.
+
+Words learned:
+
+- WSL: Windows Subsystem for Linux, a Linux system inside Windows.
+- glibc: Linux's core system library; a program built on a newer Linux needs
+  at least that glibc version.
+- tarball: one file holding a whole folder, like a zip, that keeps Linux file
+  permissions.
