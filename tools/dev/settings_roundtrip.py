@@ -1,6 +1,6 @@
 """Round-trip settings.toml through the real launcher and report every lost field.
 
-settings_roundtrip.py [--save BASELINE] [--compare BASELINE]
+settings_roundtrip.py [--profile N] [--exe EXE] [--save BASELINE] [--compare BASELINE]
 
 Builds a throwaway install from build-win/, writes a settings.toml where every
 launcher-visible value differs from its default, opens the launcher, presses
@@ -25,7 +25,7 @@ DISC = os.path.join(ROOT, 'disc', 'Disc1', 'Valkyrie Profile (Undub) (Disc 1).cu
 PLAY_BUTTON = (972, 817)  # launcher window pixels at LNG_UI_SCALE=100
 DEBUG_PORT = 4399
 
-SETTINGS = f'''
+PROFILE_1 = f'''
 [video]
 renderer          = "vulkan"
 supersampling     = 3
@@ -88,27 +88,90 @@ multitap_analog = false
 language = "en"
 '''
 
+PROFILE_2 = f'''
+[video]
+renderer          = "opengl"
+supersampling     = 2
+window_width      = 0
+antialiasing      = true
+texture_filtering = "bilinear"
+texture_dedither  = false
+stretch           = false
+fmv_filter        = "nearest"
+geometry_correction   = false
+perspective_texturing = false
+crt_filter        = "trinitron"
+scanlines         = false
+scanline_strength = 0.75
+fast_boot         = false
+bios_hle          = true
+fullscreen        = 0
+frame_interpolation = false
+frame_interpolation_fps = 0
+aspect_ratio      = "4:3"
+rewind            = false
+rewind_depth      = 200
+rewind_interval   = 1
 
-def make_install(dest):
+[audio]
+frequency = 44100
+spu_hq = false
+
+[hotkeys]
+rewind_pad = 0
+save_state_menu_pad = 0
+fast_forward_pad = 0
+fast_forward_toggle_pad = 0
+quick_menu_pad = 0
+disc_swap_pad = 0
+
+[launcher]
+skip_launcher = false
+
+[disc]
+path = "{DISC}"
+selected = 1
+
+[memcard]
+dir     = "saves"
+enable1 = false
+enable2 = true
+
+[controller]
+p1_device = "none"
+p1_mode   = "digital"
+multitap  = true
+multitap_analog = true
+
+[localization]
+language = "en"
+'''
+PROFILES = {1: (PROFILE_1, {'scanlines': 1, 'strength_pct': 30}),
+            2: (PROFILE_2, {'scanlines': 0, 'strength_pct': 75})}
+
+
+def make_install(dest, settings, exe):
     for name in os.listdir(BUILD):
         src = os.path.join(BUILD, name)
-        if name.endswith('.dll') or name in ('ValkyrieRecomp.exe', 'game.toml', 'game_options.toml'):
+        if name.endswith('.dll') or name in ('game.toml', 'game_options.toml'):
             shutil.copy2(src, dest)
         elif name in ('assets', 'bios', 'cheats', 'mods'):
             shutil.copytree(src, os.path.join(dest, name))
+    shutil.copy2(exe, os.path.join(dest, 'ValkyrieRecomp.exe'))
     os.makedirs(os.path.join(dest, 'saves'))
     with open(os.path.join(dest, 'settings.toml'), 'w', encoding='utf-8') as f:
-        f.write(SETTINGS)
+        f.write(settings)
 
 
 def debug_query(cmd):
     return query('127.0.0.1', DEBUG_PORT, {'cmd': cmd})
 
 
-def run_launcher(dest):
+def run_game(dest, direct):
     env = dict(os.environ, LNG_UI_SCALE='100', PSX_BIOS_HLE='0',
                LNG_SCRIPT=f'wait:60;click:{PLAY_BUTTON[0]},{PLAY_BUTTON[1]};wait:5')
-    proc = subprocess.Popen([os.path.join(dest, 'ValkyrieRecomp.exe'), '--launcher',
+    mode = '--no-launcher' if direct else '--launcher'
+    proc = subprocess.Popen([os.path.join(dest, 'ValkyrieRecomp.exe'), mode,
                              '--debug-port', str(DEBUG_PORT)], cwd=dest, env=env,
                             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     live = None
@@ -139,30 +202,38 @@ def flatten(doc, prefix=''):
 
 def main():
     ap = argparse.ArgumentParser()
+    ap.add_argument('--profile', type=int, default=1, choices=sorted(PROFILES))
+    ap.add_argument('--exe', default=os.path.join(BUILD, 'ValkyrieRecomp.exe'))
+    ap.add_argument('--direct', action='store_true',
+                    help='start without the launcher; settings.toml must stay untouched')
     ap.add_argument('--save')
     ap.add_argument('--compare')
     args = ap.parse_args()
 
+    ok = True
     dest = tempfile.mkdtemp(prefix='settings_rt_')
     try:
-        make_install(dest)
-        live = run_launcher(dest)
+        settings, expect_live = PROFILES[args.profile]
+        make_install(dest, settings, args.exe)
+        live = run_game(dest, args.direct)
         with open(os.path.join(dest, 'settings.toml'), encoding='utf-8') as f:
-            written = f.read()
+            written = f.read().replace(DISC, '<DISC>')
     finally:
         shutil.rmtree(dest, ignore_errors=True)
 
-    sent = flatten(tomllib.loads(SETTINGS))
+    if args.direct and written != settings.replace(DISC, '<DISC>'):
+        print('FAIL a direct start rewrote settings.toml')
+        ok = False
+    sent = flatten(tomllib.loads(settings))
     got = flatten(tomllib.loads(written))
-    ok = True
     for key in sorted(sent):
         if key not in got:
             print(f'LOST     {key} (sent {sent[key]!r})')
         elif got[key] != sent[key] and not key.endswith(('.path', '.dir')):
             print(f'CHANGED  {key}: sent {sent[key]!r}, got {got[key]!r}')
     print(f'game after PLAY: {live}')
-    if live != {'id': 0, 'ok': True, 'scanlines': 1, 'strength_pct': 30}:
-        print('FAIL game did not apply scanlines = true, strength 0.3')
+    if not live or any(live.get(k) != v for k, v in expect_live.items()):
+        print(f'FAIL game did not apply {expect_live}')
         ok = False
 
     if args.save:

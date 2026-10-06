@@ -6082,16 +6082,200 @@ static void pad_hotkeys_store(PsxUserSettings &us) {
 }
 
 #if defined(RECOMP_LAUNCHER)
-static void pad_hotkeys_to_launcher(RecompLauncherCSettings &ls) {
+static void pad_hotkeys_to_launcher(const PsxUserSettings &us,
+                                    RecompLauncherCSettings &ls) {
     for (const PadHotkeySetting &h : kPadHotkeys)
         ls.assist_pad_bind[h.assist_bind] =
-            normalize_hotkey_pad_binding(*h.global, h.fallback);
+            normalize_hotkey_pad_binding(us.*h.value, h.fallback);
 }
 
-static void pad_hotkeys_from_launcher(const RecompLauncherCSettings &ls) {
-    for (const PadHotkeySetting &h : kPadHotkeys)
-        *h.global = normalize_hotkey_pad_binding(ls.assist_pad_bind[h.assist_bind],
-                                                 h.fallback);
+static void pad_hotkeys_from_launcher(const RecompLauncherCSettings &ls,
+                                      PsxUserSettings &us) {
+    for (const PadHotkeySetting &h : kPadHotkeys) {
+        us.*h.value = normalize_hotkey_pad_binding(ls.assist_pad_bind[h.assist_bind],
+                                                   h.fallback);
+        us.*h.present = true;
+    }
+}
+#endif
+
+/* Display, audio, rewind and pad-hotkey settings, each conversion written
+ * once: settings.toml <-> runtime globals <-> launcher. Paths, memory cards,
+ * controllers, mod-owned toggles, window width and live side effects stay
+ * with the callers, because their rules differ per call site. */
+static void video_settings_load(const PsxUserSettings &us, bool vulkan_offered) {
+    if (us.has_renderer) {
+        if (us.renderer == 2 && !vulkan_offered) {
+            g_video_renderer = 1;
+            std::fprintf(stdout,
+                "psxrecomp: settings requested Vulkan, but this game does not "
+                "offer Vulkan in the launcher; using OpenGL.\n");
+        } else {
+            g_video_renderer = us.renderer;
+        }
+    }
+    if (us.has_supersampling)  g_video_scale     = us.supersampling;
+    if (us.has_antialiasing)   g_video_aa        = us.antialiasing;
+    if (us.has_texture_filter) g_video_texfilter = us.texture_filter;
+    if (us.has_texture_dedither) g_video_dedither = us.texture_dedither ? 1 : 0;
+    if (us.has_video_stretch)  g_video_stretch   = us.video_stretch ? 1 : 0;
+    if (us.has_fmv_filter)     g_video_fmv_filter = us.fmv_filter;
+    if (us.has_geometry_correction)
+        g_video_geometry_correction = us.geometry_correction ? 1 : 0;
+    if (us.has_perspective_texturing)
+        g_video_perspective_texturing = us.perspective_texturing ? 1 : 0;
+    if (us.has_screen_kind)    g_video_screen    = us.screen_kind;
+    if (us.has_scanlines)      g_video_scanlines = us.scanlines;
+    if (us.has_scanline_strength)
+        g_video_scanline_strength = (float)us.scanline_strength;
+    if (us.has_fullscreen)     g_fullscreen      = us.fullscreen;
+    if (us.has_frame_interpolation)
+        g_frame_interpolation = us.frame_interpolation ? 1 : 0;
+    if (us.has_frame_interpolation_fps)
+        g_frame_interpolation_fps = us.frame_interpolation_fps;
+    if (us.has_aspect_ratio) {
+        g_video_aspect_num = us.aspect_num;
+        g_video_aspect_den = us.aspect_den;
+    }
+    if (us.has_audio_freq)     g_audio_freq      = us.audio_freq;
+    if (us.has_spu_hq)         g_audio_spu_hq    = us.spu_hq;
+    if (us.has_rewind)         g_rewind_enabled  = us.rewind ? 1 : 0;
+    if (us.has_rewind_depth)   g_rewind_depth    = us.rewind_depth;
+    if (us.has_rewind_interval) g_rewind_interval = us.rewind_interval;
+    pad_hotkeys_load(us);
+}
+
+static void video_settings_store(PsxUserSettings &us) {
+    us.renderer = g_video_renderer;             us.has_renderer = true;
+    us.supersampling = g_video_scale;           us.has_supersampling = true;
+    us.antialiasing = g_video_aa;               us.has_antialiasing = true;
+    us.texture_filter = g_video_texfilter;      us.has_texture_filter = true;
+    us.texture_dedither = g_video_dedither != 0; us.has_texture_dedither = true;
+    us.video_stretch = g_video_stretch != 0;    us.has_video_stretch = true;
+    us.fmv_filter = g_video_fmv_filter;         us.has_fmv_filter = true;
+    us.geometry_correction = g_video_geometry_correction != 0;
+    us.has_geometry_correction = true;
+    us.perspective_texturing = g_video_perspective_texturing != 0;
+    us.has_perspective_texturing = true;
+    us.screen_kind = g_video_screen;            us.has_screen_kind = true;
+    us.scanlines = g_video_scanlines;           us.has_scanlines = true;
+    us.scanline_strength = g_video_scanline_strength;
+    us.has_scanline_strength = true;
+    us.fullscreen = g_fullscreen;               us.has_fullscreen = true;
+    us.frame_interpolation = g_frame_interpolation != 0;
+    us.has_frame_interpolation = true;
+    us.frame_interpolation_fps = g_frame_interpolation_fps;
+    us.has_frame_interpolation_fps = true;
+    us.aspect_num = g_video_aspect_num;
+    us.aspect_den = g_video_aspect_den;         us.has_aspect_ratio = true;
+    us.audio_freq = g_audio_freq;               us.has_audio_freq = true;
+    us.spu_hq = g_audio_spu_hq;                 us.has_spu_hq = true;
+    us.rewind = g_rewind_enabled != 0;          us.has_rewind = true;
+    us.rewind_depth = g_rewind_depth;           us.has_rewind_depth = true;
+    us.rewind_interval = g_rewind_interval;     us.has_rewind_interval = true;
+    us.window_width = g_video_win_w;            us.has_window_width = true;
+    pad_hotkeys_store(us);
+}
+
+#if defined(RECOMP_LAUNCHER)
+/* renderer_from_user: the player chose a renderer, so a saved Software
+ * renderer is kept instead of replaced by the default. */
+static void video_settings_to_launcher(const PsxUserSettings &us,
+                                       RecompLauncherCSettings &ls,
+                                       bool vulkan_offered, bool renderer_from_user) {
+    ls.fullscreen     = us.fullscreen;
+    ls.linear_filter  = (us.texture_filter != 0) ? 1 : 0;
+    ls.widescreen     = (us.aspect_num == 16 && us.aspect_den == 9) ? 1 : 0;
+    ls.widescreen_hud = ls.widescreen;
+    ls.audio_freq     = us.audio_freq;
+    /* aspect_index: 0 = 4:3, 1 = 16:9, 2 = 21:9 (see RecompLauncherCSettings). */
+    ls.aspect_index   = (us.aspect_num * 9 == us.aspect_den * 21) ? 2 :
+                         (us.aspect_num == 16 && us.aspect_den == 9) ? 1 : 0;
+    /* offer_stretch games show 0 = 4:3 (Original), 1 = Stretch to fill. */
+    if (g_video_offer_stretch)
+        ls.aspect_index = us.video_stretch ? 1 : 0;
+    ls.window_width       = us.window_width;
+    ls.renderer           = us.renderer;
+    /* Fresh / invalid seed → OpenGL (DEFAULT_VIDEO_RENDERER), never
+     * Software — unless the user explicitly saved software. */
+    if (ls.renderer < 0 || ls.renderer > (vulkan_offered ? 2 : 1))
+        ls.renderer = PSXRecompV4::DEFAULT_VIDEO_RENDERER;
+    if (ls.renderer == 0 && !renderer_from_user &&
+        PSXRecompV4::DEFAULT_VIDEO_RENDERER != 0)
+        ls.renderer = PSXRecompV4::DEFAULT_VIDEO_RENDERER;
+    ls.supersampling      = us.supersampling;
+    ls.antialiasing       = us.antialiasing ? 1 : 0;
+    ls.texture_filter     = us.texture_filter;
+    ls.texture_dedither   = us.texture_dedither ? 1 : 0;
+    ls.fmv_filter         = cfg_fmv_filter_to_launcher(us.fmv_filter);
+    ls.geometry_correction   = us.geometry_correction ? 1 : 0;
+    ls.perspective_texturing = us.perspective_texturing ? 1 : 0;
+    ls.screen_kind        = us.screen_kind;
+#if defined(RECOMP_LAUNCHER_HAS_SCANLINES)
+    ls.scanlines             = us.scanlines ? 1 : 0;
+    ls.scanline_strength_pct = us.has_scanline_strength
+        ? (int)(us.scanline_strength * 100.0 + 0.5) : 50;
+#endif
+    ls.frame_interp       = us.frame_interpolation ? 1 : 0;
+    ls.frame_interp_fps   = us.frame_interpolation_fps;
+    ls.spu_hq             = us.spu_hq ? 1 : 0;
+    ls.rewind_enabled     = us.rewind ? 1 : 0;
+    ls.rewind_depth       = us.rewind_depth > 0 ? us.rewind_depth : 50;
+    ls.rewind_interval    = us.rewind_interval > 0 ? us.rewind_interval : 15;
+    pad_hotkeys_to_launcher(us, ls);
+}
+
+static void video_settings_from_launcher(const RecompLauncherCSettings &ls,
+                                         PsxUserSettings &us) {
+    us.fullscreen = ls.fullscreen;              us.has_fullscreen = true;
+    /* aspect_index round-trips 0/1/2 -> 4:3 / 16:9 / 21:9, superseding the
+     * legacy ls.widescreen bool. */
+    switch (ls.aspect_index) {
+        case 2:  us.aspect_num = 21; us.aspect_den = 9; break;
+        case 1:  us.aspect_num = 16; us.aspect_den = 9; break;
+        default: us.aspect_num = 4;  us.aspect_den = 3; break;
+    }
+    if (g_video_offer_stretch) {
+        /* Stretch is presentation only: the game keeps its 4:3 frame. */
+        us.video_stretch = ls.aspect_index == 1;
+        us.aspect_num = 4; us.aspect_den = 3;
+    }
+    us.has_video_stretch = true;
+    us.has_aspect_ratio = true;
+    /* has_texture_filter is on (PSX profile) so the launcher edits
+     * ls.texture_filter directly; ls.linear_filter is the legacy fallback
+     * field for consoles without the cap and is left unused here. */
+    us.texture_filter = (ls.texture_filter >= 0 && ls.texture_filter <= 2) ? ls.texture_filter : 0;
+    us.has_texture_filter = true;
+    us.texture_dedither = ls.texture_dedither != 0; us.has_texture_dedither = true;
+    us.fmv_filter = launcher_fmv_filter_to_cfg(ls.fmv_filter);
+    us.has_fmv_filter = true;
+    us.window_width          = ls.window_width;          us.has_window_width          = true;
+    us.renderer              = ls.renderer;              us.has_renderer              = true;
+    us.supersampling         = ls.supersampling;         us.has_supersampling         = true;
+    us.antialiasing          = ls.antialiasing != 0;     us.has_antialiasing          = true;
+    us.geometry_correction   = ls.geometry_correction != 0;
+    us.has_geometry_correction = true;
+    us.perspective_texturing = ls.perspective_texturing != 0;
+    us.has_perspective_texturing = true;
+    us.screen_kind           = ls.screen_kind;           us.has_screen_kind           = true;
+#if defined(RECOMP_LAUNCHER_HAS_SCANLINES)
+    us.scanlines             = ls.scanlines != 0;        us.has_scanlines             = true;
+    if (ls.scanline_strength_pct >= 0) {
+        us.scanline_strength = ls.scanline_strength_pct / 100.0;
+        us.has_scanline_strength = true;
+    }
+#endif
+    us.frame_interpolation   = ls.frame_interp != 0;     us.has_frame_interpolation   = true;
+    us.frame_interpolation_fps = ls.frame_interp_fps;    us.has_frame_interpolation_fps = true;
+    us.audio_freq            = ls.audio_freq;            us.has_audio_freq            = true;
+    us.spu_hq                = ls.spu_hq != 0;           us.has_spu_hq                = true;
+    us.rewind                = ls.rewind_enabled != 0;   us.has_rewind                = true;
+    us.rewind_depth          = ls.rewind_depth > 0 ? ls.rewind_depth : 50;
+    us.has_rewind_depth      = true;
+    us.rewind_interval       = ls.rewind_interval > 0 ? ls.rewind_interval : 15;
+    us.has_rewind_interval   = true;
+    pad_hotkeys_from_launcher(ls, us);
 }
 #endif
 
@@ -12556,16 +12740,7 @@ int main(int argc, char** argv) {
                 "again from the launcher (a fresh settings.toml will be written).");
         }
         if (us.has_skip_launcher)  skip_launcher_setting = us.skip_launcher;
-        if (us.has_renderer) {
-            if (us.renderer == 2 && !vulkan_offered) {
-                g_video_renderer = 1;
-                std::fprintf(stdout,
-                    "psxrecomp: settings requested Vulkan, but this game does not "
-                    "offer Vulkan in the launcher; using OpenGL.\n");
-            } else {
-                g_video_renderer = us.renderer;
-            }
-        }
+        video_settings_load(us, vulkan_offered);
         if (us.has_netplay_player_name && !us.netplay_player_name.empty()) {
             netplay_player_name = us.netplay_player_name;
             has_netplay_player_name = true;
@@ -12574,22 +12749,8 @@ int main(int argc, char** argv) {
         if (us.has_netplay_lobby_url && !us.netplay_lobby_url.empty())
             g_lnch_lobby_url = us.netplay_lobby_url;
 #endif
-        if (us.has_supersampling)  g_video_scale     = us.supersampling;
         if (us.has_window_width)   g_video_win_w     = us.window_width;
         if (us.has_window_width && us.window_width > 0) g_video_win_w_explicit = true;
-        if (us.has_antialiasing)   g_video_aa        = us.antialiasing;
-        if (us.has_texture_filter) g_video_texfilter = us.texture_filter;
-        if (us.has_texture_dedither) g_video_dedither = us.texture_dedither ? 1 : 0;
-        if (us.has_video_stretch)  g_video_stretch   = us.video_stretch ? 1 : 0;
-        if (us.has_fmv_filter)     g_video_fmv_filter = us.fmv_filter;
-        if (us.has_geometry_correction)
-            g_video_geometry_correction = us.geometry_correction ? 1 : 0;
-        if (us.has_perspective_texturing)
-            g_video_perspective_texturing = us.perspective_texturing ? 1 : 0;
-        if (us.has_screen_kind)    g_video_screen    = us.screen_kind;
-        if (us.has_scanlines)      g_video_scanlines = us.scanlines;
-        if (us.has_scanline_strength)
-            g_video_scanline_strength = (float)us.scanline_strength;
         if (us.has_auto_skip_fmv)  g_auto_skip_fmv   = us.auto_skip_fmv ? 1 : 0;
         /* turbo_loads is deliberately NOT restored from settings.toml. It is a
          * write-only latch: the launcher stopped drawing a Turbo loads row when
@@ -12607,17 +12768,6 @@ int main(int argc, char** argv) {
                 "settings save.\n");
         if (us.has_fast_boot)      fast_boot = us.fast_boot;
         if (us.has_bios_hle)       bios_hle  = us.bios_hle;
-        if (us.has_fullscreen)     g_fullscreen      = us.fullscreen;
-        if (us.has_aspect_ratio) {
-            g_video_aspect_num = us.aspect_num;
-            g_video_aspect_den = us.aspect_den;
-        }
-        if (us.has_audio_freq)     g_audio_freq      = us.audio_freq;
-        if (us.has_spu_hq)         g_audio_spu_hq    = us.spu_hq;
-        if (us.has_rewind)        g_rewind_enabled = us.rewind ? 1 : 0;
-        if (us.has_rewind_depth)  g_rewind_depth   = us.rewind_depth;
-        if (us.has_rewind_interval) g_rewind_interval = us.rewind_interval;
-        pad_hotkeys_load(us);
         if (us.has_bios_path && !bios_from_cli && !us.bios_path.empty()) {
             settings_bios_storage = us.bios_path.string();
             bios_path = settings_bios_storage.c_str();
@@ -12684,10 +12834,6 @@ int main(int argc, char** argv) {
         apply_offline_pad_count(game_players, multitap_enabled);
         if (us.has_low_latency_input) g_low_latency_input = us.low_latency_input ? 1 : 0;
         if (us.has_vsync)             g_video_vsync       = us.vsync;
-        if (us.has_frame_interpolation)
-            g_frame_interpolation = us.frame_interpolation ? 1 : 0;
-        if (us.has_frame_interpolation_fps)
-            g_frame_interpolation_fps = us.frame_interpolation_fps;
     }
 
     /* lock_mode: the game supports exactly ONE pad type (e.g. X4 / Tomba 2 are
@@ -13095,42 +13241,15 @@ int main(int argc, char** argv) {
             /* Netplay session BIOS is match-only; never overwrite seed/bios.cfg. */
             std::filesystem::path match_session_bios_path;
             bool match_session_bios_set = false;
-            seed.renderer = g_video_renderer;             seed.has_renderer = true;
-            seed.supersampling = g_video_scale;           seed.has_supersampling = true;
-            seed.antialiasing = g_video_aa;               seed.has_antialiasing = true;
-            seed.texture_filter = g_video_texfilter;      seed.has_texture_filter = true;
-            seed.texture_dedither = g_video_dedither != 0; seed.has_texture_dedither = true;
-            seed.video_stretch = g_video_stretch != 0;    seed.has_video_stretch = true;
-            seed.fmv_filter = g_video_fmv_filter;         seed.has_fmv_filter = true;
-            /* Seeded (and marked present) so a launcher save round-trips the
-             * player's hand-edited value instead of dropping the key. */
-            seed.geometry_correction = (g_video_geometry_correction != 0);
-            seed.has_geometry_correction = true;
-            seed.perspective_texturing = (g_video_perspective_texturing != 0);
-            seed.has_perspective_texturing = true;
-            seed.screen_kind = g_video_screen;            seed.has_screen_kind = true;
-            seed.scanlines = g_video_scanlines;           seed.has_scanlines = true;
-            seed.scanline_strength = g_video_scanline_strength;
-            seed.has_scanline_strength = true;
+            /* Every value is marked present, so a launcher save round-trips
+             * the player's hand-edited values instead of dropping keys. */
+            video_settings_store(seed);
             seed.auto_skip_fmv = (g_auto_skip_fmv != 0);
             seed.has_auto_skip_fmv = skip_fmv_offered;
             seed.turbo_loads = (g_turbo_loads_enabled != 0);
             seed.has_turbo_loads = turbo_loads_offered;
             seed.fast_boot = fast_boot;                   seed.has_fast_boot = true;
             seed.bios_hle  = bios_hle;                    seed.has_bios_hle  = true;
-            seed.fullscreen = g_fullscreen;                seed.has_fullscreen = true;
-            seed.frame_interpolation = (g_frame_interpolation != 0);
-            seed.has_frame_interpolation = true;
-            seed.frame_interpolation_fps = g_frame_interpolation_fps;
-            seed.has_frame_interpolation_fps = true;
-            seed.aspect_num = g_video_aspect_num;
-            seed.aspect_den = g_video_aspect_den;         seed.has_aspect_ratio = true;
-            seed.audio_freq = g_audio_freq;               seed.has_audio_freq = true;
-            seed.spu_hq = g_audio_spu_hq;                 seed.has_spu_hq = true;
-            seed.rewind = g_rewind_enabled != 0;          seed.has_rewind = true;
-            seed.rewind_depth = g_rewind_depth;           seed.has_rewind_depth = true;
-            seed.rewind_interval = g_rewind_interval;     seed.has_rewind_interval = true;
-            pad_hotkeys_store(seed);
             seed.skip_launcher = skip_launcher_setting;   seed.has_skip_launcher = true;
             if (has_netplay_player_name) {
                 seed.netplay_player_name = netplay_player_name;
@@ -13209,7 +13328,6 @@ int main(int argc, char** argv) {
                 seed.deadzone = player_deadzone[0];
                 seed.has_deadzone = true;
             }
-            seed.window_width = g_video_win_w; seed.has_window_width = true;
 
             /* recomp-ui creates + owns its SDL2/GL window internally, so there
              * is no launcher window/context to manage here. */
@@ -13236,14 +13354,11 @@ int main(int argc, char** argv) {
             RecompLauncherCSettings ls{};
             ls.output_method  = 2;  /* OpenGL */
             ls.window_scale   = std::max(1, std::min(4, g_video_win_w / 320));
-            ls.fullscreen     = seed.fullscreen;
             ls.ignore_aspect  = 0;
-            ls.linear_filter  = (seed.texture_filter != 0) ? 1 : 0;
-            ls.widescreen     = (seed.aspect_num == 16 && seed.aspect_den == 9) ? 1 : 0;
-            ls.widescreen_hud = ls.widescreen;
             ls.enable_audio   = 1;
-            ls.audio_freq     = seed.audio_freq;
             ls.volume         = host_volume_get();
+            video_settings_to_launcher(seed, ls, vulkan_offered,
+                                       user_settings_has_renderer);
             {
                 const int n = std::min(PSX_MAX_PLAYERS, RECOMP_LAUNCHER_MAX_PLAYERS);
                 for (int i = 0; i < n; ++i) {
@@ -13276,44 +13391,6 @@ int main(int argc, char** argv) {
             ls.msu1_dir[0]    = '\0';
             std::snprintf(ls.netplay_player_name, sizeof(ls.netplay_player_name), "%s",
                           has_netplay_player_name ? netplay_player_name.c_str() : "");
-            /* aspect_index: 0 = 4:3, 1 = 16:9, 2 = 21:9 (see RecompLauncherCSettings). */
-            ls.aspect_index   = (seed.aspect_num * 9 == seed.aspect_den * 21) ? 2 :
-                                 (seed.aspect_num == 16 && seed.aspect_den == 9) ? 1 : 0;
-            /* offer_stretch games show 0 = 4:3 (Original), 1 = Stretch to fill. */
-            if (g_video_offer_stretch)
-                ls.aspect_index = seed.video_stretch ? 1 : 0;
-
-            /* ---- deeper PSX-style settings (capability-gated via launcher_profile
-             * below). Sourced 1:1 from PSXRecompV4::UserSettings (config_loader.h). */
-            ls.window_width      = seed.window_width;
-            ls.renderer           = seed.renderer;
-            /* Fresh / invalid seed → OpenGL (DEFAULT_VIDEO_RENDERER), never
-             * Software — unless the user explicitly saved software. */
-            if (ls.renderer < 0 || ls.renderer > (vulkan_offered ? 2 : 1))
-                ls.renderer = PSXRecompV4::DEFAULT_VIDEO_RENDERER;
-            if (ls.renderer == 0 && !user_settings_has_renderer &&
-                PSXRecompV4::DEFAULT_VIDEO_RENDERER != 0)
-                ls.renderer = PSXRecompV4::DEFAULT_VIDEO_RENDERER;
-            ls.supersampling      = seed.supersampling;
-            ls.antialiasing       = seed.antialiasing ? 1 : 0;
-            ls.texture_filter     = seed.texture_filter;
-            ls.texture_dedither   = seed.texture_dedither ? 1 : 0;
-            ls.fmv_filter         = cfg_fmv_filter_to_launcher(seed.fmv_filter);
-            ls.geometry_correction   = seed.geometry_correction ? 1 : 0;
-            ls.perspective_texturing = seed.perspective_texturing ? 1 : 0;
-            ls.screen_kind        = seed.screen_kind;
-#if defined(RECOMP_LAUNCHER_HAS_SCANLINES)
-            ls.scanlines             = seed.scanlines ? 1 : 0;
-            ls.scanline_strength_pct = seed.has_scanline_strength
-                ? (int)(seed.scanline_strength * 100.0 + 0.5) : 50;
-#endif
-            ls.frame_interp       = seed.frame_interpolation ? 1 : 0;
-            ls.frame_interp_fps   = seed.frame_interpolation_fps;
-            ls.spu_hq             = seed.spu_hq ? 1 : 0;
-            ls.rewind_enabled    = seed.rewind ? 1 : 0;
-            ls.rewind_depth      = seed.rewind_depth > 0 ? seed.rewind_depth : 50;
-            ls.rewind_interval   = seed.rewind_interval > 0 ? seed.rewind_interval : 15;
-            pad_hotkeys_to_launcher(ls);
             ls.auto_skip_fmv      = seed.auto_skip_fmv ? 1 : 0;
             ls.turbo_loads        = seed.turbo_loads ? 1 : 0;
             /* Localization: index of resolved_language within lang_menu_options
@@ -13549,31 +13626,8 @@ int main(int argc, char** argv) {
                     seed.disc_index = ls.disc_index;
                     seed.has_disc_index = true;
                 }
-                seed.fullscreen    = ls.fullscreen;            seed.has_fullscreen = true;
                 seed.skip_launcher = ls.skip_launcher != 0;   seed.has_skip_launcher = true;
-                /* aspect_index round-trips 0/1/2 -> 4:3 / 16:9 / 21:9, superseding the
-                 * legacy ls.widescreen bool (still set above for older callers). */
-                switch (ls.aspect_index) {
-                    case 2:  seed.aspect_num = 21; seed.aspect_den = 9; break;
-                    case 1:  seed.aspect_num = 16; seed.aspect_den = 9; break;
-                    default: seed.aspect_num = 4;  seed.aspect_den = 3; break;
-                }
-                if (g_video_offer_stretch) {
-                    /* Stretch is presentation only: the game keeps its 4:3 frame. */
-                    seed.video_stretch = ls.aspect_index == 1;
-                    seed.aspect_num = 4; seed.aspect_den = 3;
-                }
-                seed.has_video_stretch = true;
-                seed.has_aspect_ratio = true;
-                /* has_texture_filter is on (PSX profile) so the launcher edits
-                 * ls.texture_filter directly (0=nearest,1=bilinear); ls.linear_filter
-                 * is the legacy fallback field for consoles without the cap and is
-                 * left unused here. */
-                seed.texture_filter = (ls.texture_filter >= 0 && ls.texture_filter <= 2) ? ls.texture_filter : 0;
-                seed.has_texture_filter = true;
-                seed.texture_dedither = ls.texture_dedither != 0; seed.has_texture_dedither = true;
-                seed.fmv_filter = launcher_fmv_filter_to_cfg(ls.fmv_filter);
-                seed.has_fmv_filter = true;
+                video_settings_from_launcher(ls, seed);
                 {
                     const int n = std::min(PSX_MAX_PLAYERS, RECOMP_LAUNCHER_MAX_PLAYERS);
                     const int un = std::min(n, PSXRecompV4::UserSettings::kMaxControllerPlayers);
@@ -13618,38 +13672,6 @@ int main(int argc, char** argv) {
                     seed.has_deadzone = true;
                 }
 
-                /* ---- deeper PSX-style settings write-back (mirrors the seed
-                 * fields above), all gated on by the "psx" launcher_profile caps. */
-                seed.window_width          = ls.window_width;          seed.has_window_width          = true;
-                seed.renderer              = ls.renderer;              seed.has_renderer              = true;
-                seed.supersampling         = ls.supersampling;         seed.has_supersampling         = true;
-                seed.antialiasing          = ls.antialiasing != 0;     seed.has_antialiasing          = true;
-                seed.geometry_correction   = ls.geometry_correction != 0;
-                seed.has_geometry_correction = true;
-                seed.perspective_texturing = ls.perspective_texturing != 0;
-                seed.has_perspective_texturing = true;
-                seed.fmv_filter            = launcher_fmv_filter_to_cfg(ls.fmv_filter);
-                seed.has_fmv_filter        = true;
-                seed.screen_kind           = ls.screen_kind;           seed.has_screen_kind           = true;
-#if defined(RECOMP_LAUNCHER_HAS_SCANLINES)
-                seed.scanlines             = ls.scanlines != 0;        seed.has_scanlines             = true;
-                if (ls.scanline_strength_pct >= 0) {
-                    seed.scanline_strength = ls.scanline_strength_pct / 100.0;
-                    seed.has_scanline_strength = true;
-                }
-#endif
-                seed.frame_interpolation   = ls.frame_interp != 0;     seed.has_frame_interpolation   = true;
-                seed.frame_interpolation_fps = ls.frame_interp_fps;    seed.has_frame_interpolation_fps = true;
-                seed.audio_freq            = ls.audio_freq;            seed.has_audio_freq            = true;
-                seed.spu_hq                = ls.spu_hq != 0;           seed.has_spu_hq                = true;
-                seed.rewind                = ls.rewind_enabled != 0;
-                seed.has_rewind            = true;
-                seed.rewind_depth          = ls.rewind_depth > 0 ? ls.rewind_depth : 50;
-                seed.has_rewind_depth      = true;
-                seed.rewind_interval       = ls.rewind_interval > 0 ? ls.rewind_interval : 15;
-                seed.has_rewind_interval   = true;
-                pad_hotkeys_from_launcher(ls);
-                pad_hotkeys_store(seed);
                 seed.auto_skip_fmv = ls.auto_skip_fmv != 0;
                 seed.has_auto_skip_fmv = skip_fmv_offered;
                 seed.turbo_loads = ls.turbo_loads != 0;
@@ -13831,19 +13853,7 @@ int main(int argc, char** argv) {
                 } else {
                     g_netplay_from_lobby = 0;
                 }
-                g_video_renderer  = seed.renderer;
-                g_video_scale     = seed.supersampling;
-                g_video_aa        = seed.antialiasing;
-                g_video_texfilter = seed.texture_filter;
-                g_video_dedither = seed.texture_dedither ? 1 : 0;
-                g_video_stretch = seed.video_stretch ? 1 : 0;
-                g_video_fmv_filter = seed.fmv_filter;
-                g_video_geometry_correction   = seed.geometry_correction ? 1 : 0;
-                g_video_perspective_texturing = seed.perspective_texturing ? 1 : 0;
-                g_video_screen    = seed.screen_kind;
-                if (seed.has_scanlines) g_video_scanlines = seed.scanlines;
-                if (seed.has_scanline_strength)
-                    g_video_scanline_strength = (float)seed.scanline_strength;
+                video_settings_load(seed, vulkan_offered);
                 gl_renderer_set_scanlines(g_video_scanlines ? 1 : 0,
                                           g_video_scanline_strength);
                 g_auto_skip_fmv = skip_fmv_offered && seed.auto_skip_fmv ? 1 : 0;
@@ -13851,18 +13861,6 @@ int main(int argc, char** argv) {
                     turbo_loads_offered && seed.turbo_loads ? 1 : 0;
                 fast_boot = seed.fast_boot;
                 bios_hle  = seed.bios_hle;
-                g_fullscreen      = seed.fullscreen;
-                g_frame_interpolation = seed.frame_interpolation ? 1 : 0;
-                g_frame_interpolation_fps = seed.frame_interpolation_fps;
-                g_video_aspect_num = seed.aspect_num;
-                g_video_aspect_den = seed.aspect_den;
-                g_audio_freq      = seed.audio_freq;
-                g_audio_spu_hq    = seed.spu_hq;
-                g_rewind_enabled = seed.has_rewind ? (seed.rewind ? 1 : 0) : 0;
-                g_rewind_depth   = seed.has_rewind_depth && seed.rewind_depth > 0
-                    ? seed.rewind_depth : 50;
-                g_rewind_interval = seed.has_rewind_interval && seed.rewind_interval > 0
-                    ? seed.rewind_interval : 15;
                 skip_launcher_setting = seed.skip_launcher;
                 if (seed.has_bios_path) {
                     settings_bios_storage = seed.bios_path.string();
@@ -15356,43 +15354,16 @@ soft_return_lobby:
         ls.output_method = 2;
         ls.window_scale = std::max(1, std::min(4, g_video_win_w / 320));
         ls.disc_index = selected_disc_index;
-        ls.fullscreen = g_fullscreen ? 1 : 0;
         ls.ignore_aspect = 0;
-        ls.linear_filter = (g_video_texfilter != 0) ? 1 : 0;
-        ls.widescreen =
-            (g_video_aspect_num == 16 && g_video_aspect_den == 9) ? 1 : 0;
-        ls.widescreen_hud = ls.widescreen;
         ls.enable_audio = 1;
-        ls.audio_freq = g_audio_freq;
         ls.volume = host_volume_get();
-        ls.window_width = g_video_win_w;
-        ls.renderer = g_video_renderer;
-        if (ls.renderer < 0 || ls.renderer > (vulkan_offered ? 2 : 1))
-            ls.renderer = PSXRecompV4::DEFAULT_VIDEO_RENDERER;
-        ls.supersampling = g_video_scale;
-        ls.antialiasing = g_video_aa ? 1 : 0;
-        ls.texture_filter = g_video_texfilter;
-        ls.fmv_filter = cfg_fmv_filter_to_launcher(g_video_fmv_filter);
-        ls.geometry_correction = g_video_geometry_correction ? 1 : 0;
-        ls.perspective_texturing = g_video_perspective_texturing ? 1 : 0;
-        ls.screen_kind = g_video_screen;
-#if defined(RECOMP_LAUNCHER_HAS_SCANLINES)
-        ls.scanlines             = g_video_scanlines ? 1 : 0;
-        ls.scanline_strength_pct = (int)(g_video_scanline_strength * 100.0f + 0.5f);
-#endif
-        ls.frame_interp = g_frame_interpolation ? 1 : 0;
-        ls.frame_interp_fps = g_frame_interpolation_fps;
-        ls.spu_hq = g_audio_spu_hq ? 1 : 0;
+        {
+            PsxUserSettings current;
+            video_settings_store(current);
+            video_settings_to_launcher(current, ls, vulkan_offered, true);
+        }
         ls.auto_skip_fmv = (skip_fmv_offered && g_auto_skip_fmv) ? 1 : 0;
         ls.turbo_loads = (turbo_loads_offered && g_turbo_loads_enabled) ? 1 : 0;
-        ls.rewind_enabled = g_rewind_enabled;
-        ls.rewind_depth = g_rewind_depth;
-        ls.rewind_interval = g_rewind_interval;
-        pad_hotkeys_to_launcher(ls);
-        ls.aspect_index = (g_video_aspect_num * 9 == g_video_aspect_den * 21) ? 2
-            : (g_video_aspect_num == 16 && g_video_aspect_den == 9) ? 1 : 0;
-        if (g_video_offer_stretch)
-            ls.aspect_index = g_video_stretch ? 1 : 0;
         ls.language_index = 0;
         for (size_t li = 0; li < lang_menu_options.size(); li++) {
             if (lang_menu_options[li].code == resolved_language) {
@@ -15644,65 +15615,11 @@ soft_return_lobby:
                         game_config_path, "multitap_analog", multitap_analog);
                 }
 #endif
-                us.renderer = ls.renderer;
-                us.has_renderer = true;
-                us.supersampling = ls.supersampling;
-                us.has_supersampling = true;
-                us.antialiasing = ls.antialiasing != 0;
-                us.has_antialiasing = true;
-                us.texture_filter = ls.texture_filter;
-                us.has_texture_filter = true;
-                us.fmv_filter = launcher_fmv_filter_to_cfg(ls.fmv_filter);
-                us.has_fmv_filter = true;
-                us.geometry_correction = ls.geometry_correction != 0;
-                us.has_geometry_correction = true;
-                us.perspective_texturing = ls.perspective_texturing != 0;
-                us.has_perspective_texturing = true;
-                us.screen_kind = ls.screen_kind;
-                us.has_screen_kind = true;
-#if defined(RECOMP_LAUNCHER_HAS_SCANLINES)
-                us.scanlines = ls.scanlines != 0;
-                us.has_scanlines = true;
-                if (ls.scanline_strength_pct >= 0) {
-                    us.scanline_strength = ls.scanline_strength_pct / 100.0;
-                    us.has_scanline_strength = true;
-                }
-#endif
-                us.frame_interpolation = ls.frame_interp != 0;
-                us.has_frame_interpolation = true;
-                us.frame_interpolation_fps = ls.frame_interp_fps;
-                us.has_frame_interpolation_fps = true;
-                us.audio_freq = ls.audio_freq;
-                us.has_audio_freq = true;
-                us.spu_hq = ls.spu_hq != 0;
-                us.has_spu_hq = true;
-                us.rewind = ls.rewind_enabled != 0;
-                us.has_rewind = true;
-                us.rewind_depth = ls.rewind_depth > 0 ? ls.rewind_depth : 50;
-                us.has_rewind_depth = true;
-                us.rewind_interval = ls.rewind_interval > 0 ? ls.rewind_interval : 15;
-                us.has_rewind_interval = true;
-                pad_hotkeys_from_launcher(ls);
-                pad_hotkeys_store(us);
+                video_settings_from_launcher(ls, us);
                 us.auto_skip_fmv = ls.auto_skip_fmv != 0;
                 us.has_auto_skip_fmv = skip_fmv_offered;
                 us.turbo_loads = ls.turbo_loads != 0;
                 us.has_turbo_loads = turbo_loads_offered;
-                us.fullscreen = ls.fullscreen != 0;
-                us.has_fullscreen = true;
-                us.window_width = ls.window_width;
-                us.has_window_width = true;
-                switch (ls.aspect_index) {
-                    case 2:  us.aspect_num = 21; us.aspect_den = 9; break;
-                    case 1:  us.aspect_num = 16; us.aspect_den = 9; break;
-                    default: us.aspect_num = 4;  us.aspect_den = 3; break;
-                }
-                if (g_video_offer_stretch) {
-                    us.video_stretch = ls.aspect_index == 1;
-                    us.has_video_stretch = true;
-                    us.aspect_num = 4; us.aspect_den = 3;
-                }
-                us.has_aspect_ratio = true;
                 if (ls.bios_path[0]) {
                     us.bios_path = ls.bios_path;
                     us.has_bios_path = true;
@@ -15714,18 +15631,13 @@ soft_return_lobby:
                 }
                 (void)PSXRecompV4::save_user_settings(settings_path, us);
             }
-            g_video_renderer = ls.renderer;
-            g_video_scale = ls.supersampling;
-            g_video_aa = ls.antialiasing;
-            g_video_texfilter = ls.texture_filter;
-            g_video_fmv_filter = launcher_fmv_filter_to_cfg(ls.fmv_filter);
-            g_video_geometry_correction = ls.geometry_correction ? 1 : 0;
-            g_video_perspective_texturing = ls.perspective_texturing ? 1 : 0;
-            g_video_screen = ls.screen_kind;
+            const int rewind_was_enabled = g_rewind_enabled;
+            {
+                PsxUserSettings picked;
+                video_settings_from_launcher(ls, picked);
+                video_settings_load(picked, vulkan_offered);
+            }
 #if defined(RECOMP_LAUNCHER_HAS_SCANLINES)
-            g_video_scanlines = ls.scanlines != 0;
-            if (ls.scanline_strength_pct >= 0)
-                g_video_scanline_strength = ls.scanline_strength_pct / 100.0f;
             gl_renderer_set_scanlines(g_video_scanlines ? 1 : 0,
                                       g_video_scanline_strength);
 #endif
@@ -15738,39 +15650,18 @@ soft_return_lobby:
              * offered flags are false for both, so leave both globals alone. */
             if (skip_fmv_offered)     g_auto_skip_fmv = ls.auto_skip_fmv ? 1 : 0;
             if (turbo_loads_offered)  g_turbo_loads_enabled = ls.turbo_loads ? 1 : 0;
-            g_fullscreen = ls.fullscreen != 0;
-            g_frame_interpolation = ls.frame_interp ? 1 : 0;
-            g_frame_interpolation_fps = ls.frame_interp_fps;
-            g_audio_freq = ls.audio_freq;
-            g_audio_spu_hq = ls.spu_hq != 0;
-            if (ls.rewind_depth > 0) {
-                g_rewind_depth = ls.rewind_depth;
-                psx_rewind_set_depth((uint32_t)g_rewind_depth);
-            }
-            if (ls.rewind_interval > 0) {
-                g_rewind_interval = ls.rewind_interval;
-                psx_rewind_set_interval((uint32_t)g_rewind_interval);
-            }
+            psx_rewind_set_depth((uint32_t)g_rewind_depth);
+            psx_rewind_set_interval((uint32_t)g_rewind_interval);
             /* Applied live so turning rewind off frees the ring now rather
              * than next launch — reclaiming it is the point of the setting.
              * shutdown() also closes the overlay and drops a pending load. */
-            if ((ls.rewind_enabled ? 1 : 0) != g_rewind_enabled) {
-                g_rewind_enabled = ls.rewind_enabled ? 1 : 0;
+            if (g_rewind_enabled != rewind_was_enabled) {
                 psx_rewind_set_enabled(g_rewind_enabled);
                 if (g_rewind_enabled)
                     psx_rewind_configure(memory_get_bios_checksum(),
                                          game_entry_pc);
                 else
                     psx_rewind_shutdown();
-            }
-            switch (ls.aspect_index) {
-                case 2:  g_video_aspect_num = 21; g_video_aspect_den = 9; break;
-                case 1:  g_video_aspect_num = 16; g_video_aspect_den = 9; break;
-                default: g_video_aspect_num = 4;  g_video_aspect_den = 3; break;
-            }
-            if (g_video_offer_stretch) {
-                g_video_stretch = ls.aspect_index == 1;
-                g_video_aspect_num = 4; g_video_aspect_den = 3;
             }
             g_video_win_w = ls.window_width;
             g_video_win_w_explicit = g_video_win_w > 0;
