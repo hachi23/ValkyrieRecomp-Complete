@@ -1,0 +1,72 @@
+# psxrecomp user settings - written by the launcher. Safe to hand-edit.
+# Overrides the bundled game.toml; the command line overrides this file.
+
+[retroachievements]
+enabled  = false
+hardcore = false
+username = ""
+token    = ""
+
+[video]
+renderer          = "vulkan"
+supersampling     = 3
+window_width      = 1280
+antialiasing      = false
+texture_filtering = "smooth"
+texture_dedither  = true
+stretch           = true
+fmv_filter        = "bilinear"
+geometry_correction   = true
+perspective_texturing = true
+crt_filter        = "crt"
+scanlines         = true
+scanline_strength = 0.3
+fast_boot         = true
+bios_hle          = false
+fullscreen        = 0
+frame_interpolation = false
+frame_interpolation_fps = 0
+aspect_ratio      = "4:3"
+rewind            = true
+rewind_depth      = 100
+rewind_interval   = 8
+
+[audio]
+frequency = 48000
+spu_hq = true
+
+[hotkeys]
+rewind_pad = 2040
+save_state_menu_pad = 1272
+fast_forward_pad = 1024
+fast_forward_toggle_pad = 1528
+quick_menu_pad = 1272
+disc_swap_pad = 2040
+
+[launcher]
+skip_launcher = true
+
+[disc]
+path = "D:/Emulation/Recomps/Valkyrie/ValkyrieRecomp-Complete/disc/Disc1/Valkyrie Profile (Undub) (Disc 1).bin"
+selected = 1
+
+[memcard]
+dir     = "saves"
+card1   = "saves/card1.mcd"
+card2   = "saves/card2.mcd"
+enable1 = true
+enable2 = true
+
+[controller]
+p1_device = "keyboard"
+p1_mode   = "digital"
+p1_deadzone = 6553
+p2_device = "none"
+p2_mode   = "digital"
+p2_deadzone = 6553
+multitap  = false
+multitap_analog = false
+deadzone  = 6553
+
+[localization]
+language = "en"
