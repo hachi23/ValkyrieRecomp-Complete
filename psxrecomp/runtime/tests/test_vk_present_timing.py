@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from pathlib import Path
 
-source = (Path(__file__).parents[1] / "src" / "gpu_vk_renderer.c").read_text()
+source = (Path(__file__).parents[1] / "src" / "gpu_vk_renderer.c").read_text(encoding="utf-8")
 for field in ("present_qpc", "wait_us", "acquire_us", "present_us"):
     assert field in source
 for call in (

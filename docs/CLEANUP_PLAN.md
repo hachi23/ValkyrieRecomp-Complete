@@ -120,7 +120,43 @@ one set of globals, which is why finding A exists.
 Each phase ends with something you can run to prove it. Phases 0 and 1 are
 small and safe. Phases 2 and 3 are the real cleanup.
 
-### Phase 0. Make breakage visible (about one session)
+### Phase 0. Make breakage visible (done 2026-10-06)
+
+Result: 47 of 47 runtime tests pass and `tools/dev/check.sh` runs build,
+tests, the TCP docs check and a launcher screenshot in one go (Measured,
+CHECK OK). How each of the 8 failures was settled:
+
+- `test_launcher_vulkan_option`. Read source without `encoding="utf-8"`, so
+  Windows decoded it as cp1252. Fixed in all 9 tests that did this.
+- `test_release_zip`. The fixture used `write_text`, which writes `\r\n` on
+  Windows. The zip tool was fine.
+- `test_overlay_pair_dedup_runtime`. A real behaviour test. Needed `gcc` on
+  PATH (check.sh provides it), 10 stubs for loader hooks added since, and the
+  new cache folder name, now taken from `compile_overlays.cache_tag()`.
+- `test_dirty_text_continuation_guards`. Upstream `f07f8019` dropped the
+  resume-PC clip on purpose (it ran stale code in CMR2). The test now guards
+  the opposite: no clipping.
+- `test_mod_owned_display_controls`. Upstream `c37cf3f1` turned the
+  widescreen offer on. The test now expects that.
+- `test_rewind_toggle_combo`, `test_runtime_perf_diag_guards`. Lines were
+  rewrapped or renamed (`s_frame_pacer`); behaviour unchanged.
+- `test_interpreter_perf_guards`. Upstream `31015cea` stopped publishing
+  `g_psx_cycle_fast_limit`, so the inline cycle shortcut is off. The
+  clearing checks now apply only if a publisher returns. The main-RAM load
+  fast path moved into `psx_cyc.h` (`916b8ca7`); the test guards it there.
+
+New findings from this phase:
+
+- **I1.** The inline main-RAM load path in `psx_cyc.h` checks `g_ls_mode`,
+  `g_ds_recording` and the address only. The old memory.c path also bailed
+  for `g_ls_replay_active`, `g_ram_read_watch_active` and
+  `g_dma_exec_depth > 0` (Read). No symptom seen in this game. Guess: debug
+  read watches and lockstep replay can miss these loads.
+- **I2.** `g_psx_cycle_fast_limit` is never set non-zero, so its readers in
+  `dirty_ram_interp.c` and `memory.c` are dead code (Read). Candidate for
+  deletion once upstream confirms the shortcut is not coming back.
+
+Original plan:
 
 1. Fix or delete the 8 failing tests. Replace text checks with behaviour
    checks where a debug-server command can show the behaviour (hotkeys,
@@ -140,7 +176,8 @@ small and safe. Phases 2 and 3 are the real cleanup.
 2. Write freeze dumps into `logs/` (finding F).
 3. Make the DLL bundling script skip system DLLs, and call it from the build
    (finding F). Check: delete `build-win`, rebuild, the exe starts.
-4. Scale the Vulkan menu overlay like OpenGL does (finding G).
+4. ~~Scale the Vulkan menu overlay like OpenGL does (finding G).~~ Done
+   2026-10-06 with the owner's bug report (Measured at 2560x1440).
 5. Turn the Ctrl+C panic button into `[KeyMap] ReinsertDisc` and a Quick menu
    row (finding G).
 6. PlayStation button names in controller labels (finding G).

@@ -10,8 +10,9 @@ HEADER = (ROOT / "runtime" / "include" / "mod_plugins.h").read_text(
     encoding="utf-8"
 )
 
+# c37cf3f1 offers the widescreen aspect in the launcher; the rest stay mod-owned.
+assert "constexpr bool ws_offered = true;" in MAIN
 for declaration in (
-    "constexpr bool ws_offered = false;",
     "constexpr bool ws_ultrawide_offered = false;",
     "constexpr bool frame_interpolation_offered = false;",
     "constexpr bool skip_fmv_offered = false;",
@@ -26,11 +27,11 @@ for legacy_route in (
 ):
     assert legacy_route not in MAIN, f"legacy offer flag still controls UI: {legacy_route}"
 
-for hidden_capability in (
-    "gi->widescreen_supported = 0;",
-    "gi->aspect_mask = 0;",
+for offered_capability in (
+    "gi->widescreen_supported = 1;",
+    "gi->aspect_mask = 0x3;",
 ):
-    assert hidden_capability in MAIN
+    assert offered_capability in MAIN
 
 for trusted_api in (
     "psx_mod_set_fixed_display_aspect",

@@ -18,13 +18,15 @@ def main() -> int:
 
     required_range_fragments = (
         "uint32_t exec_pc",
-        "if (phys + len <= at) continue;",
-        "len -= at - phys;",
         "if (!any)",
     )
     for fragment in required_range_fragments:
         if fragment not in range_guard:
             raise AssertionError(f"missing continuation range guard: {fragment}")
+    # f07f8019: a continuation can loop back behind its resume PC, so every
+    # range is validated in full. Clipping to [exec_pc, end) ran stale code.
+    if "len -= at - phys;" in range_guard or "phys + len <= at" in range_guard:
+        raise AssertionError("range validation is clipped to the resume PC again")
     if "text_diverged_bitmap" in range_guard:
         raise AssertionError("exact-range mismatch still sticky-poisons a whole page")
     if "dirty_ram_text_native_ok_ranges_from(lo_len_pairs, count, 0u)" not in memory:

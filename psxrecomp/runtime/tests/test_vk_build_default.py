@@ -4,8 +4,8 @@ import re
 
 
 root = Path(__file__).parents[2]
-runtime_cmake = (root / "runtime" / "runtime.cmake").read_text()
-config_loader = (root / "recompiler" / "src" / "config_loader.h").read_text()
+runtime_cmake = (root / "runtime" / "runtime.cmake").read_text(encoding="utf-8")
+config_loader = (root / "recompiler" / "src" / "config_loader.h").read_text(encoding="utf-8")
 
 option = re.search(
     r'option\(PSX_ENABLE_VULKAN\s+"[^"]*"\s+(ON|OFF)\)', runtime_cmake

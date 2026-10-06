@@ -88,6 +88,7 @@ starvation_dump.jsonl
 
 # Local dev logs from tools/dev scripts
 /tools/dev/*.log
+/tools/dev/check-*
 # psxrecomp generated BIOS C and codegen hash (regenerated locally)
 /psxrecomp/generated/
 /psxrecomp/runtime/include/overlay_codegen_hash.h

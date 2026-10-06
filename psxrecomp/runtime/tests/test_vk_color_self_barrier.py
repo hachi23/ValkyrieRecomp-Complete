@@ -2,7 +2,7 @@
 from pathlib import Path
 import re
 
-source = (Path(__file__).parents[1] / "src" / "gpu_vk_renderer.c").read_text()
+source = (Path(__file__).parents[1] / "src" / "gpu_vk_renderer.c").read_text(encoding="utf-8")
 helper = re.search(
     r"static void color_self_barrier\(.*?\n\}", source, flags=re.DOTALL
 )

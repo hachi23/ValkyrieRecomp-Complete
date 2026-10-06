@@ -2,7 +2,7 @@
 from pathlib import Path
 import re
 
-source = (Path(__file__).parents[1] / "src" / "gpu_vk_renderer.c").read_text()
+source = (Path(__file__).parents[1] / "src" / "gpu_vk_renderer.c").read_text(encoding="utf-8")
 
 begin = re.search(r"static VkCommandBuffer begin_oneshot\(.*?\n\}", source, re.DOTALL)
 end = re.search(r"static void end_oneshot\(.*?\n\}", source, re.DOTALL)

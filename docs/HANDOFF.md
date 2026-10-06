@@ -102,8 +102,10 @@ Bash tool fails in ccache because `USERPROFILE` is missing there.
 - Save states: slot 3 (file `slot03`) Valhalla balcony, slot 5 world map,
   slot 7 in the menu (file `slot06`) balcony. Slots 1 and 2 caught the title
   demo; overwrite them.
-- Runtime tests: `python psxrecomp/runtime/tests/<name>.py`. 39 pass, 8 fail on
-  this baseline. The 8 are listed in `docs/CLEANUP_PLAN.md` finding C.
+- Runtime tests: `python psxrecomp/runtime/tests/<name>.py`. All 47 pass
+  (the overlay test needs MinGW `gcc` on PATH). Before committing run
+  `& C:\msys64\usr\bin\bash.exe -l tools/dev/check.sh` (build, tests, TCP
+  docs, launcher smoke). Phase 0 of `docs/CLEANUP_PLAN.md` is done.
 
 ## State at handoff
 

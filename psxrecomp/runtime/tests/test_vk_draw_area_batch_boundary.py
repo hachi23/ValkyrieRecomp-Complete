@@ -3,7 +3,7 @@ from pathlib import Path
 import re
 
 
-source = (Path(__file__).parents[1] / "src" / "gpu_vk_renderer.c").read_text()
+source = (Path(__file__).parents[1] / "src" / "gpu_vk_renderer.c").read_text(encoding="utf-8")
 setter = re.search(
     r"static void vkb_set_draw_area\(.*?\n\}", source, flags=re.DOTALL
 )

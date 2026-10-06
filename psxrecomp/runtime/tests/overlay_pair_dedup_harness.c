@@ -49,6 +49,33 @@ void ds_init(const char *cache_dir, const char *game_id) {
 }
 uint32_t dirty_ram_get_bitmap_word(uint32_t word) { (void)word; return 0; }
 int dirty_ram_is_dirty(uint32_t phys) { (void)phys; return 0; }
+int psx_game_text_native_ok(uint32_t addr) { (void)addr; return 0; }
+int psx_netplay_is_resimulating(void) { return 0; }
+uint32_t psx_ws_cull_keep_result(uint32_t vanilla, uint32_t forced) {
+    (void)forced; return vanilla;
+}
+uint32_t psx_ws_aspect_cone_result(uint32_t site, uint32_t vanilla, uint32_t object,
+                                   int32_t x, int32_t z, int32_t y) {
+    (void)site; (void)object; (void)x; (void)z; (void)y; return vanilla;
+}
+uint32_t psx_ws_angle_widen(uint32_t vanilla) { return vanilla; }
+void psx_pgxp_load(struct CPUState *cpu, uint32_t instr, uint32_t addr, uint32_t value) {
+    (void)cpu; (void)instr; (void)addr; (void)value;
+}
+void psx_pgxp_store(struct CPUState *cpu, uint32_t instr, uint32_t addr, uint32_t value) {
+    (void)cpu; (void)instr; (void)addr; (void)value;
+}
+void psx_pgxp_alu(struct CPUState *cpu, uint32_t instr, uint32_t result, uint32_t s1,
+                  uint32_t s2) {
+    (void)cpu; (void)instr; (void)result; (void)s1; (void)s2;
+}
+void psx_pgxp_muldiv(struct CPUState *cpu, uint32_t instr, uint32_t hi, uint32_t lo,
+                     uint32_t s1, uint32_t s2) {
+    (void)cpu; (void)instr; (void)hi; (void)lo; (void)s1; (void)s2;
+}
+void psx_pgxp_cop2(struct CPUState *cpu, uint32_t instr, uint32_t value, uint32_t addr) {
+    (void)cpu; (void)instr; (void)value; (void)addr;
+}
 int dirty_ram_dispatch(CPUState *cpu, uint32_t addr, uint32_t stop) {
     (void)cpu; (void)addr; (void)stop; return 0;
 }

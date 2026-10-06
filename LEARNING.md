@@ -771,3 +771,40 @@ Words learned:
 - CA bundle: the trusted list of certificate issuers.
 - Swapchain: the set of screen-sized pictures the graphics card takes turns showing.
 - Nearest-neighbour scaling: enlarging by repeating each pixel, which keeps edges sharp.
+
+## 2026-10-06: Phase 0, making breakage visible
+
+The project has 47 small test programs that check the code. 8 of them had
+been failing for weeks and nobody noticed, because nothing ran them. A
+smoke alarm with a dead battery is worse than none, because you trust it.
+
+What was wrong came in three kinds.
+
+- **Windows quirks in the tests.** Two tests read or wrote text the Linux
+  way. Windows reads files with a different alphabet table unless told
+  "UTF-8", and writes a line break as two characters instead of one. The
+  game was fine; the tests were not.
+- **Stale tests.** Several tests check that an exact line of code exists.
+  When someone improves the code, the line changes and the test fails even
+  though nothing broke. For each one I looked up the change in the history
+  and confirmed it was on purpose (for example, a fix that stopped another
+  game from running old code). Then I updated the test to guard the new rule.
+- **A real behaviour test.** One test actually builds and runs the overlay
+  loader (the part that loads the game's swappable code chunks from disc).
+  It needed stand-ins for ten newer connections and the new name of the
+  cache folder. It passes every scenario now.
+
+Two things worth knowing turned up and went into the plan (I1, I2). One
+speed shortcut has fewer safety checks than its older version, and one old
+shortcut is switched off but its code is still there.
+
+New tool. `tools/dev/check.sh` builds the game, runs all 47 tests, checks
+that the debug-command list is up to date, and opens the launcher to take a
+screenshot. One command, then either "CHECK OK" or a list of what broke.
+
+Words learned:
+
+- Test: a small program that checks another program still behaves.
+- Regression: something that used to work and broke again.
+- Smoke test: a quick "does it even start" check.
+- Stub: a stand-in piece that lets a test run part of a program on its own.

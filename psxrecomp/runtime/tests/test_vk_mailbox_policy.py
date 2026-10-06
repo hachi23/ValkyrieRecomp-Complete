@@ -2,7 +2,7 @@
 from pathlib import Path
 import re
 
-source = (Path(__file__).parents[1] / "src" / "gpu_vk_renderer.c").read_text()
+source = (Path(__file__).parents[1] / "src" / "gpu_vk_renderer.c").read_text(encoding="utf-8")
 choose = re.search(r"static VkPresentModeKHR choose_present_mode\(.*?\n\}", source, re.DOTALL)
 assert choose
 body = choose.group(0)

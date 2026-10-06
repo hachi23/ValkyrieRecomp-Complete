@@ -11,6 +11,7 @@ themselves.
 | `gen.sh` | Build the emitters, verify both discs, generate the game C into `generated/` |
 | `bios.sh` | Regenerate the OpenBIOS C, then build |
 | `build.sh` | Configure `build-win/` if needed and build `psx-runtime` (log: `build.log`) |
+| `check.sh` | Build, run all runtime tests, check `docs/TCP_COMMANDS.md`, launcher screenshot. Run before every commit |
 | `deps.sh` | Copy the MinGW DLLs the exe needs into `build-win/` (needed after a fresh `build-win`) |
 | `dbg.py <cmd> k=v` | One debug-server command (port 4398) |
 | `press.py`, `advance.py`, `newgame.py` | Queue pad input routes through the debug server |

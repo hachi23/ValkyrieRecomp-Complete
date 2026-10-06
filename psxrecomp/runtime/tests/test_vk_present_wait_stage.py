@@ -2,7 +2,7 @@
 from pathlib import Path
 import re
 
-source = (Path(__file__).parents[1] / "src" / "gpu_vk_renderer.c").read_text()
+source = (Path(__file__).parents[1] / "src" / "gpu_vk_renderer.c").read_text(encoding="utf-8")
 # Match the DEFINITION, not the forward declaration: require the parameter
 # list to be followed by `{`. Without `[^;]*?\)\s*\{` the search latches onto
 # the prototype above the definition and `body` becomes the *next* function

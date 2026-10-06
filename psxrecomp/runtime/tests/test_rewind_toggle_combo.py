@@ -47,7 +47,7 @@ assert "g_frame_period_ms / (double)mult" in MAIN
 assert "static int           g_hotkey_pad_fast_forward = 1528;" in MAIN
 assert "PSX_HOTKEY_PAD_SELECT_L1" in MAIN
 assert "PSX_ASSIST_BIND_FAST_FORWARD" in MAIN
-assert "            hotkey_pad_binding_down(g_hotkey_pad_fast_forward)) {" in MAIN
+assert "hotkey_pad_binding_down(g_hotkey_pad_fast_forward)" in MAIN
 assert MAIN.count("ls.assist_pad_bind[PSX_ASSIST_BIND_FAST_FORWARD]") == \
     MAIN.count("ls.assist_pad_bind[PSX_ASSIST_BIND_SAVE_STATE_MENU]")
 assert '"Fast-forward",' in MAIN
@@ -64,7 +64,7 @@ assert "static int g_manual_turbo_latched = 0;" in MAIN
 assert "static void fast_forward_toggle_flip(void)" in MAIN
 assert "fast_forward_toggle_poll_buttons();" in MAIN
 assert "host_keymap_match_event(HOST_KEYMAP_TURBO_TOGGLE," in MAIN
-assert "if (kb_turbo || g_manual_turbo_latched ||" in MAIN
+assert "(kb_turbo || g_manual_turbo_latched ||" in MAIN
 assert MAIN.count("ls.assist_pad_bind[PSX_ASSIST_BIND_FAST_FORWARD_TOGGLE]") == \
     MAIN.count("ls.assist_pad_bind[PSX_ASSIST_BIND_FAST_FORWARD]")
 assert '"Fast-forward toggle",' in MAIN
