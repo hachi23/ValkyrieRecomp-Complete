@@ -740,3 +740,34 @@ Words learned:
 - Display scaling (DPI): how much Windows enlarges text and windows so they
   stay readable on sharp, high-resolution screens.
 - Monorepo: one repository that holds several projects that change together.
+
+## 2026-10-06: Three fixes (achievements, menu size, resolution)
+
+**Achievements could not log in.** The game talks to the RetroAchievements
+website over HTTPS, the locked version of the web. Before trusting a website,
+the program checks its ID card (certificate) against a list of trusted
+issuers. Our copy of the web library (libcurl) shipped without that list, so
+every check failed before the website even heard us (error 77). The fix tells
+it to use the list Windows already keeps. Tested with your account: logged in
+and found Valkyrie Profile, 0 of 174.
+
+**The F5 menu was tiny.** The menu is drawn as a 640x480 picture, the size
+of an old TV screen. The OpenGL and software paths stretched it to the
+window. Vulkan pasted it pixel for pixel, so on a 1440p screen it covered a
+third of the height. Now Vulkan enlarges it by a whole number (3x at 1440p,
+2x at 1080p, 4x at 4K), so it fills the screen and stays crisp. Pop-up
+messages and the volume bar got the same treatment.
+
+**Internal resolution up to 16x.** The game draws into a copy of the PS1's
+video memory, 1024x512 pixels, multiplied by the internal resolution. At 16x
+that is 16384x8192, which is the largest picture most graphics cards accept,
+so 16x is the ceiling. Vulkan now allows it; OpenGL and software stay at 4x.
+If a card is smaller or runs out of memory, the game drops back to what fits
+and notes it in the session log. Measured: 16x runs at 60 fps on the RX 9070 XT.
+
+Words learned:
+
+- HTTPS certificate: a website's signed ID card, checked against a trusted list.
+- CA bundle: the trusted list of certificate issuers.
+- Swapchain: the set of screen-sized pictures the graphics card takes turns showing.
+- Nearest-neighbour scaling: enlarging by repeating each pixel, which keeps edges sharp.

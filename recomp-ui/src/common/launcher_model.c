@@ -31,7 +31,9 @@
 static const int kFreqTable[] = { 32040, 32000, 44100, 48000 };
 static const int kFreqCount   = (int)(sizeof(kFreqTable) / sizeof(kFreqTable[0]));
 
-static const int kWindowWidths[]    = { 960, 1280, 1600, 1920 };
+/* 0 = fit the display (the host sizes the window to the usable screen). */
+static const int kWindowWidths[]    = { 960, 1280, 1600, 1920, 2560, 3840, 0 };
+static const int kMaxSupersampling  = 16;
 static const int kWindowWidthCount  = (int)(sizeof(kWindowWidths) / sizeof(kWindowWidths[0]));
 static const int kInterpFpsTable[]  = { 0, 90, 120, 144, 165, 240 };
 static const int kInterpFpsCount    = (int)(sizeof(kInterpFpsTable) / sizeof(kInterpFpsTable[0]));
@@ -633,7 +635,7 @@ void launcher_model_init(LauncherModel* m,
             if (kWindowWidths[i] == m->s.window_width) { ok = 1; break; }
         if (!ok) m->s.window_width = kWindowWidths[0];
     }
-    if (m->has_supersampling) m->s.supersampling = clampi(m->s.supersampling ? m->s.supersampling : 1, 1, 4);
+    if (m->has_supersampling) m->s.supersampling = clampi(m->s.supersampling ? m->s.supersampling : 1, 1, kMaxSupersampling);
     if (m->has_screen_kind) {
         // Clamp against the active profile's screen-model vocabulary (GBA has
         // 5 LCD models; the legacy PSX-era set has 4) — see screen_kind_vocab.
@@ -1481,7 +1483,8 @@ void launcher_model_cycle_window_size(LauncherModel* m) {
 
 const char* launcher_model_window_size_label(const LauncherModel* m) {
     static char buf[32];
-    int w = m->s.window_width > 0 ? m->s.window_width : kWindowWidths[0];
+    if (m->s.window_width == 0) return "Fit screen";
+    int w = m->s.window_width;
     int aspect = clampi(m->s.aspect_index, 0, 2);
     int h = (aspect == 1) ? (w * 9 / 16) : (aspect == 2) ? (w * 9 / 21) : (w * 3 / 4);
     snprintf(buf, sizeof(buf), "%d \xC3\x97 %d", w, h);   // "×" (U+00D7)
@@ -1511,14 +1514,27 @@ const char* launcher_model_renderer_label(const LauncherModel* m) {
     return m->s.renderer ? "OpenGL" : "Software";
 }
 
+/* PS1 on Vulkan renders up to 16x; every other path stops at 4x. */
+static int supersampling_max(const LauncherModel* m) {
+    const int psx_vulkan = m->profile && lps_streq_ci(m->profile->id, "psx") &&
+                           m->renderer_labels && m->num_renderers > 2 && m->s.renderer == 2;
+    return psx_vulkan ? kMaxSupersampling : 4;
+}
+
 void launcher_model_cycle_supersampling(LauncherModel* m) {
-    int v = clampi(m->s.supersampling ? m->s.supersampling : 1, 1, 4);
-    m->s.supersampling = (v % 4) + 1;
+    static const int kSteps[] = { 1, 2, 3, 4, 5, 6, 8, 10, 12, 16 };
+    const int n = (int)(sizeof(kSteps) / sizeof(kSteps[0]));
+    const int max = supersampling_max(m);
+    int v = m->s.supersampling ? m->s.supersampling : 1;
+    int next = 1;
+    for (int i = 0; i < n; ++i)
+        if (kSteps[i] > v) { next = kSteps[i]; break; }
+    m->s.supersampling = next > max ? 1 : next;
 }
 
 const char* launcher_model_supersampling_label(const LauncherModel* m) {
     static char buf[48];
-    int v = clampi(m->s.supersampling ? m->s.supersampling : 1, 1, 4);
+    int v = clampi(m->s.supersampling ? m->s.supersampling : 1, 1, supersampling_max(m));
     if (m->profile && lps_streq_ci(m->profile->id, "psx"))
         snprintf(buf, sizeof(buf), "%dx (%d x %d)", v, 320 * v, 240 * v);
     else

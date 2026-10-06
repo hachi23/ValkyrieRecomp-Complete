@@ -28,6 +28,8 @@ GrBackend gr_backend(void);                   /* effective backend after init */
 
 /* Lifecycle / global state */
 void gr_init(uint16_t *vram);
+/* Highest internal scale any backend accepts (Vulkan). Software and GL stop at 4. */
+#define PSX_MAX_INTERNAL_SCALE 16
 void gr_set_scale(int scale);
 int  gr_scale(void);
 void gr_set_texture_filter(int bilinear);

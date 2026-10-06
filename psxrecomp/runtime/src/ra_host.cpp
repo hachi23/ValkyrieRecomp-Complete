@@ -91,12 +91,18 @@ void server_call(const rc_api_request_t *request, rc_client_server_callback_t ca
             curl_easy_setopt(curl, CURLOPT_USERAGENT, agent.c_str());
             curl_easy_setopt(curl, CURLOPT_TIMEOUT, 30L);
             curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1L);
+            /* The MinGW libcurl ships no CA bundle; without this every HTTPS
+             * request fails with CURLE_SSL_CACERT_BADFILE. */
+            curl_easy_setopt(curl, CURLOPT_SSL_OPTIONS, static_cast<long>(CURLSSLOPT_NATIVE_CA));
             curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, collect);
             curl_easy_setopt(curl, CURLOPT_WRITEDATA, &body);
             if (headers) curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
             if (has_post) curl_easy_setopt(curl, CURLOPT_COPYPOSTFIELDS, post.c_str());
-            if (curl_easy_perform(curl) == CURLE_OK)
+            const CURLcode rc = curl_easy_perform(curl);
+            if (rc == CURLE_OK)
                 curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &status);
+            else
+                session_log_event("retroachievements: request failed (%s)", curl_easy_strerror(rc));
             curl_slist_free_all(headers);
             curl_easy_cleanup(curl);
         }

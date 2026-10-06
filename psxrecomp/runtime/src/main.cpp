@@ -6516,6 +6516,15 @@ enum class CheatMenuRowKind {
 struct CheatMenuRow { CheatMenuRowKind kind; size_t cheat; const char* title; };
 static int quick_menu_slot = 0;   /* 0-based save-state slot picked in the menu */
 
+/* Quick Menu resolution steps, wrapping to 1x past the renderer's limit. */
+static int next_internal_scale(int scale) {
+    static const int kSteps[] = {1, 2, 3, 4, 5, 6, 8, 10, 12, 16};
+    const int max = g_vk_active ? PSX_MAX_INTERNAL_SCALE : SW_MAX_INTERNAL_SCALE;
+    for (int step : kSteps)
+        if (step > scale) return step > max ? 1 : step;
+    return 1;
+}
+
 static std::vector<CheatMenuRow> cheat_menu_rows(void) {
     std::vector<CheatMenuRow> rows;
     rows.push_back({CheatMenuRowKind::Header, 0, "SAVE STATES"});
@@ -6720,7 +6729,7 @@ static void cheat_menu_activate(void) {
         std::snprintf(msg, sizeof(msg), "De-dither textures: %s", g_video_dedither ? "on" : "off");
         break;
     case CheatMenuRowKind::InternalResolution:
-        cheat_menu_pending_scale = cheat_menu_pending_scale % SW_MAX_INTERNAL_SCALE + 1;
+        cheat_menu_pending_scale = next_internal_scale(cheat_menu_pending_scale);
         std::snprintf(msg, sizeof(msg), "Internal resolution %dx applies on restart",
                       cheat_menu_pending_scale);
         break;
@@ -13906,6 +13915,7 @@ int main(int argc, char** argv) {
                     if (seed.has_deadzone) resolved_deadzone = seed.deadzone;
                 }
                 g_video_win_w = seed.window_width;
+                g_video_win_w_explicit = g_video_win_w > 0;
                 /* Persist the user's choices next to the exe. */
                 PSXRecompV4::save_user_settings(
                     exe_dir_from_argv(argv[0]) / "settings.toml", seed);
@@ -14152,7 +14162,8 @@ session_reboot:
      * Dual-raster: gr_set_scale(N) arms GL hr FBO @ N× while glb_set_scale
      * keeps SW at 1×. SW-only netplay: force scale 1. Offline: full SSAA. */
     if (g_video_scale < 1) g_video_scale = 1;
-    if (g_video_scale > SW_MAX_INTERNAL_SCALE) g_video_scale = SW_MAX_INTERNAL_SCALE;
+    /* Each backend clamps to its own limit (software and GL 4, Vulkan 16). */
+    if (g_video_scale > PSX_MAX_INTERNAL_SCALE) g_video_scale = PSX_MAX_INTERNAL_SCALE;
     if (net_cfg.enabled && s_netplay_gl_present && gl_renderer_cpu_auth_dual()) {
         gr_set_scale(g_video_scale);
         if (g_video_scale > 1) {
@@ -14601,6 +14612,7 @@ session_reboot:
         vk_renderer_set_present_mode(present_effective_swap_interval());
         g_vk_active = vk_renderer_init_context(sdl_window) != 0;
         if (g_vk_active) vk_renderer_set_dedither(g_video_dedither);
+        if (g_vk_active) g_video_scale = gr_scale(); /* device limit or 4x retry */
         if (!g_vk_active) {
             std::fprintf(stdout, "psxrecomp: renderer fallback: vulkan init failed; trying opengl\n");
             session_log_event("renderer fallback: vulkan init failed, using opengl");
@@ -15716,7 +15728,7 @@ soft_return_lobby:
                 us.has_turbo_loads = turbo_loads_offered;
                 us.fullscreen = ls.fullscreen != 0;
                 us.has_fullscreen = true;
-                us.window_width = ls.window_width > 0 ? ls.window_width : g_video_win_w;
+                us.window_width = ls.window_width;
                 us.has_window_width = true;
                 switch (ls.aspect_index) {
                     case 2:  us.aspect_num = 21; us.aspect_den = 9; break;
@@ -15814,7 +15826,8 @@ soft_return_lobby:
                 g_video_stretch = ls.aspect_index == 1;
                 g_video_aspect_num = 4; g_video_aspect_den = 3;
             }
-            g_video_win_w = ls.window_width > 0 ? ls.window_width : g_video_win_w;
+            g_video_win_w = ls.window_width;
+            g_video_win_w_explicit = g_video_win_w > 0;
             /* Preference for persistence; session settle may override boot path. */
             if (ls.bios_path[0])
                 bios_path_str = ls.bios_path;

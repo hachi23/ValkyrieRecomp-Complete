@@ -2896,7 +2896,7 @@ void draw_display_controls(LauncherModel* m, const LauncherTheme& th) {
         ImGui::PopID();
         if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal)) {
             ImGui::SetTooltip(psx_graphics
-                ? "Render at 1x to 4x the game's native resolution.\n"
+                ? "Render at 1x to 16x the game's native resolution (above 4x needs Vulkan).\n"
                   "Sizes shown use a 320 x 240 reference; actual PS1 modes vary.\n"
                   "Applies when the game starts or restarts."
                 : "Internal-resolution supersampling.\nApplies when the game starts or restarts.");

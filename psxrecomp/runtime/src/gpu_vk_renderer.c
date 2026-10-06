@@ -818,6 +818,12 @@ static int pick_device(void) {
     session_log_event("vulkan device %s, driver version 0x%08x, api %u.%u.%u", pr.deviceName,
                       pr.driverVersion, VK_API_VERSION_MAJOR(pr.apiVersion),
                       VK_API_VERSION_MINOR(pr.apiVersion), VK_API_VERSION_PATCH(pr.apiVersion));
+    /* The VRAM render targets are 1024*S wide. */
+    const int max_scale = (int)(pr.limits.maxImageDimension2D / VRAM_W);
+    if (s_scale > max_scale) {
+        session_log_event("vulkan: internal resolution %dx exceeds this GPU, using %dx", s_scale, max_scale);
+        s_scale = max_scale;
+    }
     return 1;
 }
 
@@ -1437,6 +1443,13 @@ int vk_renderer_init_context(SDL_Window *win) {
     vk_renderer_shutdown();
     if (init_context(win)) return 1;
     vk_renderer_shutdown();
+    /* Above 4x the render targets take gigabytes; retry at 4x if they did not fit. */
+    if (s_scale > 4) {
+        session_log_event("vulkan: %dx internal resolution failed to start, retrying at 4x", s_scale);
+        s_scale = 4;
+        if (init_context(win)) return 1;
+        vk_renderer_shutdown();
+    }
     return 0;
 }
 
@@ -1620,16 +1633,31 @@ static void osd_staging_free(void) {
     s_osd_cap = 0;
 }
 
+/* Overlays are drawn for a 640x480 screen. GL and the SDL path stretch them
+ * to the window; a buffer-to-image copy cannot scale, so this writes a
+ * nearest-neighbour `scale`x enlargement into the staging buffer. */
 static void vk_osd_copy_rect(VkCommandBuffer cb, VkImage sc,
-                             const uint32_t *px, int w, int h,
+                             const uint32_t *px, int w, int h, int scale,
                              int x, int y, VkDeviceSize buf_off) {
     if (!px || w <= 0 || h <= 0) return;
-    int dw = w, dh = h;
+    const int sw = w * scale, sh = h * scale;
+    int dw = sw, dh = sh;
     if (x + dw > (int)s_sc_extent.width) dw = (int)s_sc_extent.width - x;
     if (y + dh > (int)s_sc_extent.height) dh = (int)s_sc_extent.height - y;
     if (dw < 1 || dh < 1) return;
-    memcpy((uint8_t *)s_osd_map + (size_t)buf_off, px,
-           (size_t)w * (size_t)h * 4u);
+    uint32_t *dst = (uint32_t *)((uint8_t *)s_osd_map + (size_t)buf_off);
+    if (scale == 1) {
+        memcpy(dst, px, (size_t)w * (size_t)h * 4u);
+    } else {
+        for (int row = 0; row < h; ++row) {
+            uint32_t *line = dst + (size_t)row * scale * sw;
+            const uint32_t *src = px + (size_t)row * w;
+            for (int col = 0; col < w; ++col)
+                for (int k = 0; k < scale; ++k) line[col * scale + k] = src[col];
+            for (int k = 1; k < scale; ++k)
+                memcpy(line + (size_t)k * sw, line, (size_t)sw * 4u);
+        }
+    }
     VkBufferImageCopy bc = {0};
     bc.bufferOffset = buf_off;
     bc.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -1639,8 +1667,8 @@ static void vk_osd_copy_rect(VkCommandBuffer cb, VkImage sc,
     bc.imageExtent.width = (uint32_t)dw;
     bc.imageExtent.height = (uint32_t)dh;
     bc.imageExtent.depth = 1;
-    bc.bufferRowLength = (uint32_t)w;
-    bc.bufferImageHeight = (uint32_t)h;
+    bc.bufferRowLength = (uint32_t)sw;
+    bc.bufferImageHeight = (uint32_t)sh;
     p_vkCmdCopyBufferToImage(cb, s_osd_buf, sc,
                              VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &bc);
 }
@@ -1663,14 +1691,25 @@ static void vk_osd_blit(VkCommandBuffer cb, VkImage sc) {
         host_osd_present_done();
         return;
     }
+    const int scw = (int)s_sc_extent.width, sch = (int)s_sc_extent.height;
+    /* Same rule as the GL and SDL paths: one step per 480 window lines. */
+    int ui = sch / 480;
+    if (ui < 1) ui = 1;
+    if (ui > 8) ui = 8;
+    int ssm_scale = 1;
+    if (have_ssm) {
+        ssm_scale = scw / sw < sch / sh ? scw / sw : sch / sh;
+        if (ssm_scale < 1) ssm_scale = 1;
+    }
+    const int sq = ui * ui;
     VkDeviceSize text_bytes =
-        have_text ? (VkDeviceSize)tw * (VkDeviceSize)th * 4u : 0;
+        have_text ? (VkDeviceSize)tw * (VkDeviceSize)th * 4u * sq : 0;
     VkDeviceSize vol_bytes =
-        have_vol ? (VkDeviceSize)vw * (VkDeviceSize)vh * 4u : 0;
+        have_vol ? (VkDeviceSize)vw * (VkDeviceSize)vh * 4u * sq : 0;
     VkDeviceSize rw_bytes =
-        have_rw ? (VkDeviceSize)rw * (VkDeviceSize)rh * 4u : 0;
+        have_rw ? (VkDeviceSize)rw * (VkDeviceSize)rh * 4u * sq : 0;
     VkDeviceSize ssm_bytes =
-        have_ssm ? (VkDeviceSize)sw * (VkDeviceSize)sh * 4u : 0;
+        have_ssm ? (VkDeviceSize)sw * (VkDeviceSize)sh * 4u * ssm_scale * ssm_scale : 0;
     VkDeviceSize bytes = text_bytes + vol_bytes + rw_bytes + ssm_bytes;
     if (bytes > s_osd_cap) {
         p_vkQueueWaitIdle(s_queue);
@@ -1681,39 +1720,38 @@ static void vk_osd_blit(VkCommandBuffer cb, VkImage sc) {
         }
         s_osd_cap = bytes;
     }
-    const int margin = 8;
+    const int margin = 8 * ui;
     VkDeviceSize off = 0;
+    /* Menu first so toasts and the volume bar stay readable on top of it. */
+    if (have_ssm) {
+        const int dw = sw * ssm_scale, dh = sh * ssm_scale;
+        int x = (scw > dw) ? ((scw - dw) / 2) : 0;
+        int y = (sch > dh) ? ((sch - dh) / 2) : 0;
+        vk_osd_copy_rect(cb, sc, ssm_px, sw, sh, ssm_scale, x, y, off);
+        off += ssm_bytes;
+        img_barrier(cb, sc, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                    VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                    VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_TRANSFER_WRITE_BIT,
+                    VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
+    }
     if (have_text) {
-        vk_osd_copy_rect(cb, sc, text_px, tw, th, margin, margin, off);
+        vk_osd_copy_rect(cb, sc, text_px, tw, th, ui, margin, margin, off);
         off += text_bytes;
     }
     if (have_vol) {
-        int x = ((int)s_sc_extent.width > vw + margin)
-                    ? ((int)s_sc_extent.width - vw - margin)
-                    : margin;
-        int y = ((int)s_sc_extent.height > vh)
-                    ? (((int)s_sc_extent.height - vh) / 2)
-                    : margin;
-        vk_osd_copy_rect(cb, sc, vol_px, vw, vh, x, y, off);
+        const int dw = vw * ui, dh = vh * ui;
+        int x = (scw > dw + margin) ? (scw - dw - margin) : margin;
+        int y = (sch > dh) ? ((sch - dh) / 2) : margin;
+        vk_osd_copy_rect(cb, sc, vol_px, vw, vh, ui, x, y, off);
         off += vol_bytes;
     }
     if (have_rw) {
+        const int dw = rw * ui, dh = rh * ui;
         float slide = psx_rewind_slide();
-        int x = ((int)s_sc_extent.width > rw)
-                    ? (((int)s_sc_extent.width - rw) / 2)
-                    : 0;
-        int y = (int)s_sc_extent.height - (int)((float)rh * slide + 0.5f);
-        vk_osd_copy_rect(cb, sc, rw_px, rw, rh, x, y, off);
+        int x = (scw > dw) ? ((scw - dw) / 2) : 0;
+        int y = sch - (int)((float)dh * slide + 0.5f);
+        vk_osd_copy_rect(cb, sc, rw_px, rw, rh, ui, x, y, off);
         off += rw_bytes;
-    }
-    if (have_ssm) {
-        int x = ((int)s_sc_extent.width > sw)
-                    ? (((int)s_sc_extent.width - sw) / 2)
-                    : 0;
-        int y = ((int)s_sc_extent.height > sh)
-                    ? (((int)s_sc_extent.height - sh) / 2)
-                    : 0;
-        vk_osd_copy_rect(cb, sc, ssm_px, sw, sh, x, y, off);
     }
     host_osd_present_done();
 }
@@ -2446,7 +2484,7 @@ static void ensure_cpu(void) {
  * backend's init calls sw_renderer_init). When Vulkan is active the SW mirror
  * is just the CPU readback target. */
 static void vkb_init(uint16_t *vram) { s_vram = vram; s_cpu_dirty = 0; sw_renderer_init(vram); }
-static void vkb_set_scale(int scale) { if (scale >= 1 && scale <= 4) s_scale = scale; }
+static void vkb_set_scale(int scale) { if (scale >= 1 && scale <= PSX_MAX_INTERNAL_SCALE) s_scale = scale; }
 static int  vkb_scale(void) { return s_scale; }
 static void vkb_set_texture_filter(int b) { s_texfilter = (b >= 0 && b <= 2) ? b : 1; }
 void vk_renderer_set_dedither(int on) { s_dedither = on ? 1 : 0; }
