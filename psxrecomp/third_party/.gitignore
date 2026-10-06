@@ -1,0 +1,11 @@
+# Vendored archives are opt-in. Only libchdr and rcheevos — dependencies with
+# no system-package fallback, so an offline build could not get them — are
+# committed; tools/ci/vendor_deps.sh stages the
+# rest here on demand for air-gapped builds, and those must not be committed
+# (SDL3 alone is ~15 MB).
+*.tar.gz
+*.tar.xz
+*.tar.bz2
+*.zip
+!libchdr-*.tar.gz
+!rcheevos-*.tar.gz

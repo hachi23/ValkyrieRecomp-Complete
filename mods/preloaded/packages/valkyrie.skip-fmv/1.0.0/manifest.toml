@@ -1,0 +1,25 @@
+format_version = 5
+id = "valkyrie.skip-fmv"
+version = "1.0.0"
+name = "Skip Movies"
+author = "ValkyrieRecomp"
+description = "Skips Valkyrie Profile's full-screen movies by holding START while one plays."
+resolver = "declarative"
+save_compatibility = "shared"
+
+[[target]]
+game_id = "SLUS-01156"
+
+[[target]]
+game_id = "SLUS-01179"
+
+[[feature]]
+id = "skip-fmv"
+name = "Skip Movies"
+description = "Disabled by default. Ends full-screen movies (the anime opening and the ending) as soon as they start, the same way pressing START does. Battle spell effects and animated dungeon backgrounds also use the video decoder but are drawn into the normal 15-bit picture, so they are left alone."
+group = "Quality of Life"
+default_enabled = false
+
+[[plugin]]
+feature = "skip-fmv"
+id = "valkyrie.skip-fmv"

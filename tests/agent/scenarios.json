@@ -1,0 +1,70 @@
+{
+  "checkpoints": {
+    "title": {
+      "slot": 1,
+      "path": "saves/openbios/state_80010008_disc1_slot01.pst",
+      "disc": 1,
+      "verification": "Linux OpenGL title inspected and slot 1 saved and restored on 2026-10-05."
+    },
+    "first_field": {
+      "slot": 3,
+      "path": "saves/openbios/state_80010008_disc1_slot03.pst",
+      "disc": 1,
+      "verification": "Valhalla balcony rendered and keyboard movement/story interaction verified on Linux OpenGL 2026-10-05. Departure dialogue saved and restored in slot 3 with successful receipts."
+    },
+    "first_battle": {
+      "slot": null,
+      "path": null,
+      "disc": 1,
+      "verification": null
+    },
+    "world_map": {
+      "slot": 5,
+      "path": "saves/openbios/state_80010008_disc1_slot05.pst",
+      "disc": 1,
+      "verification": "Midgard 3D map tutorial with Freya saved, restored, and inspected on Linux OpenGL 2026-10-05. Terrain and flying character sprites render; later chapter map features still need play."
+    }
+  },
+  "scenarios": {
+    "title_idle": {
+      "checkpoint": "title",
+      "input": [
+        {
+          "frames": 60,
+          "buttons": 65535
+        }
+      ],
+      "capture": "title.png"
+    },
+    "first_field": {
+      "checkpoint": "first_field",
+      "input": [
+        {
+          "frames": 60,
+          "buttons": 65535
+        }
+      ],
+      "capture": "first_field.png"
+    },
+    "first_battle": {
+      "checkpoint": "first_battle",
+      "input": [
+        {
+          "frames": 60,
+          "buttons": 65535
+        }
+      ],
+      "capture": "first_battle.png"
+    },
+    "world_map": {
+      "checkpoint": "world_map",
+      "input": [
+        {
+          "frames": 60,
+          "buttons": 65535
+        }
+      ],
+      "capture": "world_map.png"
+    }
+  }
+}

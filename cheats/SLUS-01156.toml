@@ -1,0 +1,41 @@
+disc_serial = "SLUS-01156"
+
+[[cheat]]
+id = "capacity-after-use"
+name = "999 capacity after use"
+codes = ["D005C718 1023", "8005C718 03E7", "D005C718 03E7", "8005C71A 2402"]
+notes = "Published by 12345 for USA Disc 1. Changes game instructions. Disabling stops writes and does not undo changes already made. Original and undub gameplay checks pending."
+source = "https://gamehacking.org/game/90093?game=90093"
+tested = false
+
+[[cheat]]
+id = "battle-item-use"
+name = "Infinite item use in battle"
+codes = ["D005A7BC FFFF", "8005A7BC 0000"]
+notes = "Published by 12345 for USA Disc 1. Disabling stops writes and does not undo changes already made. Original and undub gameplay checks pending."
+source = "https://gamehacking.org/game/90093?game=90093"
+tested = false
+
+[[cheat]]
+id = "special-gauge-l2"
+name = "Max special attack gauge with L2"
+codes = ["D002B6A0 0001", "300DB8FB 0064"]
+notes = "Published by 12345 for USA Disc 1. Hold L2 as described by the source. Original and undub gameplay checks pending."
+source = "https://gamehacking.org/game/90093?game=90093"
+tested = false
+
+[[cheat]]
+id = "dungeon-encounters"
+name = "Dungeon encounter switch"
+codes = ["D002B6A0 1008", "3007F264 0008", "D002B6A0 4008", "3007F264 0000"]
+notes = "Published by 12345 for USA Disc 1. R1+Up disables encounters; R1+Down restores them. Disabling this cheat alone does not restore the previous value. Original and undub gameplay checks pending."
+source = "https://gamehacking.org/game/90093?game=90093"
+tested = false
+
+[[cheat]]
+id = "dungeon-levitate"
+name = "Levitate in dungeon with Circle"
+codes = ["D002B6A0 0020", "301E77A9 00F7", "D002B6A0 0020", "801E77AA FFFF"]
+notes = "Published by 12345 for USA Disc 1. Hold Circle as described by the source. Original and undub gameplay checks pending."
+source = "https://gamehacking.org/game/90093?game=90093"
+tested = false

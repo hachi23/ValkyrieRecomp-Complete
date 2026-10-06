@@ -1,0 +1,122 @@
+# Autofilled by tools/new_project_layout/probe_disc.py from your legal dump.
+# Review before shipping. Runtime quirks / overlay seeds still need hand work.
+
+[game]
+name = "ValkyrieRecomp"
+id = "SLUS-01156"
+players = 1
+exe = "disc/SLUS_011.56"
+# Verified as one program on N images (verify_disc_set.py).
+# Disc 1 boots; the rest are data. The runtime builds its disc
+# roster from this list and mounts the SELECTED one (remembered
+# in disc_index), so the launcher can switch discs between runs.
+# Mid-session swap: Quick Menu > Change disc, [KeyMap] DiscSwap (Shift+F6),
+# or the disc_swap_pad controller binding.
+discs = [
+    "disc/Disc1/Valkyrie Profile (Undub) (Disc 1).cue",
+    "disc/Disc2/Valkyrie Profile (Undub) (Disc 2).cue",
+]
+disc_serials = [
+    "SLUS-01156",
+    "SLUS-01179",
+]
+load_address = "0x80010000"
+entry_pc = "0x80010008"
+text_size = "0x0001F800"
+stack_base = "0x801FFFF0"
+
+# Digests are for data Track 01 (first BINARY FILE / TRACK 01).
+[prepare_disc]
+out_dir = "disc"
+bin_name = "Valkyrie Profile (Undub) (Disc 1).bin"
+cue_name = "Valkyrie Profile (Undub) (Disc 1).cue"
+boot_exe = "SLUS_011.56"
+known_sizes = [730448880, 730448880, 747352704, 747352704]
+known_md5 = [
+  "f579cb951587081019f91af9458d305b",
+  "2d39a2817fd76dd98e11047434f770e2",
+  "50860f81b2808c8e0e25707e5bc515c4",
+  "19f36bd625e676ea5d74db612d26eb6c",
+]
+known_sha1 = [
+  "fa13cbde448a47fa87b6c7829df1c5e6215f5f66",
+  "4a5f95b45a0ed401a67164f2126230a6c508f606",
+  "3ae00a34f25c4f8745cac7c10f040b2c87a04c0c",
+  "7cc65766b46273b4ee166269170ecbaa433908fd",
+]
+known_crc32 = [
+  "dd0422d5",
+  "fdee286a",
+  "2ed8728f",
+  "c2132829",
+]
+
+[recompiler]
+seeds = "seeds/ghidra_funcs.txt"
+out_dir = "generated"
+strict = true
+
+[runtime]
+window_title = "ValkyrieRecomp"
+memcard_dir = "saves"
+
+[launcher]
+# Launcher look: the HD-2D style "diorama" theme (candle-lit wood,
+# brass corners, serif type) instead of the default PlayStation blue.
+theme = "diorama"
+
+[video]
+renderer = "vulkan"
+offer_vulkan = true
+# Skip FMVs: VP's movies have no XA audio, so MDEC activity alone marks a movie.
+# VP also decodes MDEC clips inside 15-bit battle and dungeon scenes; requiring
+# the 24-bit movie display keeps the skipper from holding START there.
+offer_skip_fmv = true
+fmv_skip_no_xa = true
+fmv_skip_require_depth24 = true
+fmv_skip_no_xa_hold = 8
+aspect_ratio = "4:3"
+# Aspect choices are 4:3 (Original) and Stretch to fill (the 4:3 picture scaled
+# to the whole window, like DuckStation's "Stretch To Fill"). The widescreen
+# hack is not offered: VP's 2D fields leave gaps at the widened edges.
+offer_stretch = true
+
+[cheats]
+file = "cheats/SLUS-01156.toml"
+
+[widescreen]
+offer = true
+full_2d = true
+native_wide = false
+nw_backdrop = false
+
+[widescreen.cull]
+auto_backdrop = true
+auto_screen_x = true
+
+[controller]
+default_mode = "digital"
+
+# Online mount gate: digests + track count + optional TOC fingerprint
+# (see docs/NETPLAY.md).
+multitap_analog = true
+[netplay]
+required_disc_fps = [
+    "a19abe70993cb076f0e2c691da56cdc43e979aff754fd6e70d98e60f33ab9fc4",
+    "9d8b1cf3339f391886be6b9ccfb48568c00bc141c78f78d760c9866d0f9ab563",
+]
+require_cue = true
+required_tracks = 1
+required_disc_fp = "a19abe70993cb076f0e2c691da56cdc43e979aff754fd6e70d98e60f33ab9fc4"
+
+# Function entries compile_overlays.py cannot discover from captures. The
+# movie decoder (the PsyQ VLC routine at 0x8006147C/0x800614AC) is reached
+# through a pointer, and CD streaming into the same pages wipes the capture's
+# entry evidence. Every compiled entry is still CRC-checked before it runs.
+[[overlays]]
+load_addr = "0x80061000"
+entries = ["0x8006147C", "0x800614AC"]
+
+[[overlays]]
+load_addr = "0x80060000"
+entries = ["0x8006147C", "0x800614AC"]
