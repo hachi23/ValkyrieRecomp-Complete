@@ -1642,6 +1642,32 @@ static void clamp_window_aspect(int* w, int* h, int num, int den) {
     *h = width * den / num;
 }
 
+/* clamp_window_aspect fits the picture to the usable bounds, but the title bar
+ * and borders come on top. With an auto-hidden taskbar the picture alone is
+ * the full screen height, so the frame pushed the title bar off the top and
+ * left what looked like a borderless window in the middle of the desktop.
+ * Once the window exists and its frame is known, shrink it (same shape) until
+ * the whole window fits, and centre it. */
+static void fit_window_frame_on_screen(SDL_Window* win, int num, int den) {
+    int top = 0, left = 0, bottom = 0, right = 0;
+#if defined(PSX_SDL3)
+    if (!SDL_GetWindowBordersSize(win, &top, &left, &bottom, &right)) return;
+#else
+    if (SDL_GetWindowBordersSize(win, &top, &left, &bottom, &right) != 0) return;
+#endif
+    SDL_Rect b;
+    if (SDL_GetDisplayUsableBounds(0, &b) != 0 || b.w <= 0 || b.h <= 0) return;
+    int w = 0, h = 0;
+    SDL_GetWindowSize(win, &w, &h);
+    const int max_w = b.w - left - right, max_h = b.h - top - bottom;
+    if (w <= max_w && h <= max_h) return;
+    int nw = std::min(w, max_w);
+    if (nw * den / num > max_h) nw = max_h * num / den;
+    const int nh = nw * den / num;
+    SDL_SetWindowSize(win, nw, nh);
+    SDL_SetWindowPosition(win, b.x + left + (max_w - nw) / 2, b.y + top + (max_h - nh) / 2);
+}
+
 static int aspect_gcd(int a, int b) {
     while (b) { int t = a % b; a = b; b = t; }
     return a > 0 ? a : 1;
@@ -14594,6 +14620,9 @@ session_reboot:
                  * swapchain from the window at init and is not rebuilt for a
                  * later maximise, which left the picture stretched or offset. */
                 if (!g_fullscreen && !g_video_win_w_explicit) SDL_MaximizeWindow(sdl_window);
+                if (!g_fullscreen && g_video_win_w_explicit)
+                    fit_window_frame_on_screen(sdl_window, g_video_aspect_num,
+                                               g_video_aspect_den);
                 return true;
             }
             if (g_video_renderer == 0) return false;

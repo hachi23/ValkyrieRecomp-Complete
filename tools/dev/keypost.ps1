@@ -9,7 +9,8 @@ public static class KP {
   [DllImport("user32.dll")] public static extern uint MapVirtualKey(uint code, uint type);
 }
 "@
-$VK = @{ F5=0x74; F6=0x75; F7=0x76; F9=0x78; F10=0x79; Up=0x26; Down=0x28; Left=0x25; Right=0x27; Return=0x0D; Escape=0x1B; Shift=0x10; Space=0x20 }
+$VK = @{ Up=0x26; Down=0x28; Left=0x25; Right=0x27; Return=0x0D; Escape=0x1B; Shift=0x10; Space=0x20 }
+foreach ($n in 1..12) { $VK["F$n"] = 0x6F + $n }
 $EXT = @('Up','Down','Left','Right')
 $h = (Get-Process $Proc | Where-Object { $_.MainWindowHandle -ne 0 } | Select-Object -First 1).MainWindowHandle
 function Send($name, $down) {
