@@ -219,7 +219,44 @@ Original items:
 8. Bound the `assist_default_*_bind` copy by `assist_binding_count`
    (finding G). Fix the stale `game.toml` comment.
 
-### Phase 2. One source of truth (two or three sessions)
+### Phase 2. One source of truth (done 2026-10-06)
+
+Result, all Measured unless marked:
+
+- **Settings (finding A).** In `main.cpp` the eight copy blocks now call
+  four functions: `video_settings_load`, `video_settings_store`,
+  `video_settings_to_launcher` and `video_settings_from_launcher`. The six
+  pad hotkeys are one table, `kPadHotkeys`. Paths, memory cards,
+  controllers, mod-owned toggles and window width stay at their call sites,
+  because their rules differ per site. The netplay lobby rematch path now
+  uses the same functions, so it also keeps de-dither and the borderless
+  fullscreen value (Read; the lobby path cannot be driven here).
+- **Proof.** `tools/dev/settings_roundtrip.py` writes two different sets of
+  non-default values, presses PLAY in the real launcher, and compares the
+  written `settings.toml` with baselines recorded by the pre-Phase-2 exe.
+  Both are byte-identical. `--direct` starts without the launcher and
+  checks the game applied the values. All four run in `check.sh`.
+- **Hotkeys (finding B).** `recomp-ui/src/common/launcher_hotkeys.def`
+  generates the launcher's enum, keys, defaults and labels (four lists
+  before). `host_keymap.c` has one `kCatalog` table whose defaults go
+  through the same parser as `config.ini` (two lists before).
+  `test_hotkey_catalog_sync.py` fails when the two disagree. A shared header
+  was rejected because psxrecomp can build without recomp-ui.
+  `test_host_keymap.c` now covers all 12 defaults and passed on the old and
+  new code; a wrong default makes it fail.
+- Side effect: the launcher now shows Fullscreen's real default,
+  Alt+Return, Ctrl+F.
+
+New finding from this phase:
+
+- **K.** The launcher round trip changes values the player set (Measured
+  by the harness, on the old and new exe alike): a disabled memory card
+  comes back enabled, P2's deadzone becomes P1's, and P1's analog mode
+  becomes digital with a keyboard seat. Frame interpolation is reset on
+  purpose (mod-owned in this game). Not fixed here, since Phase 2 was
+  behaviour-preserving.
+
+Original plan:
 
 1. Settings table. One table in psxrecomp lists each setting once: its
    global, its `settings.toml` key, its default, its launcher field. The

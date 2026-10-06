@@ -11,7 +11,9 @@ themselves.
 | `gen.sh` | Build the emitters, verify both discs, generate the game C into `generated/` |
 | `bios.sh` | Regenerate the OpenBIOS C, then build |
 | `build.sh` | Configure `build-win/` if needed, build `psx-runtime`, copy the MinGW DLLs next to it (log: `build.log`) |
-| `check.sh` | Build, run all runtime tests, check `docs/TCP_COMMANDS.md`, launcher screenshot. Run before every commit |
+| `check.sh` | Build, run all runtime tests, keymap test, settings round trips, check `docs/TCP_COMMANDS.md`, launcher screenshot. Run before every commit |
+| `settings_roundtrip.py` | Write a `settings.toml` of non-default values into a throwaway install, press PLAY in the launcher (or `--direct` start), compare the file the game writes with `baselines/` |
+| `keymap_test.sh` | Build and run `psxrecomp/runtime/tests/test_host_keymap.c` against build-win's SDL3 |
 | `dbg.py <cmd> k=v` | One debug-server command (port 4398) |
 | `press.py`, `advance.py`, `newgame.py` | Queue pad input routes through the debug server |
 | `ram.py`, `scan_w.py`, `census_sum.py`, `widen_test.py` | RAM and widescreen research helpers |

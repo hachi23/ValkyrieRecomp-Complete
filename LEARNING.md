@@ -891,3 +891,50 @@ Words learned:
 - False positive: an alarm that goes off when nothing is wrong.
 - Thread: one worker inside a program; the game and the watchdog are
   separate workers, which is why the watchdog can see the game freeze.
+
+## 2026-10-06: Phase 2, one source of truth
+
+Before this phase, the game kept each setting in four different "shapes":
+the live value the game uses, the line in `settings.toml`, the launcher's
+copy, and a temporary copy in between. Eight separate blocks of code copied
+values between them by hand. Adding one setting meant eight edits that had
+to agree. Miss one, and that setting silently got lost on one path only.
+
+Think of a party's stats kept in four notebooks, copied by hand every time
+you rest at a save point. One slip, and a character's HP is wrong in one
+notebook.
+
+What changed:
+
+- **Four copy rules instead of eight copy blocks.** There is now one rule
+  for each direction: file to game, game to file, game to launcher,
+  launcher to game. Both the normal start and the online "back to lobby"
+  path use the same rules. The lobby path had drifted; it now also keeps
+  de-dither and the borderless fullscreen choice.
+- **One list of controller hotkeys.** The six controller shortcuts are one
+  table instead of being spelled out in eight places.
+- **One list of keyboard hotkeys per program, plus a referee.** The
+  launcher's four lists of hotkey names, keys and defaults became one list.
+  The game has its own one table. A test compares the two and fails if they
+  ever disagree. The launcher now shows Fullscreen's real default too:
+  Alt+Return or Ctrl+F.
+
+How I proved nothing changed. A refactor ("refactor": reorganising code
+without changing what it does) is only safe if you can show the behaviour
+stayed the same. I built a test robot that writes a settings file full of
+unusual values, opens the real launcher, presses PLAY, and saves the file
+the game writes back. I recorded that with the old game first, then with
+the new one. They are identical, byte for byte, for two different sets of
+values. It also starts the game without the launcher and checks the
+settings were applied. The robot now runs in `check.sh` every time.
+
+What the robot found. With the old game too, the launcher quietly changes
+a few things you set: a memory card you switched off comes back on, and
+player 2's deadzone copies player 1's. That is finding K, a good next fix.
+
+Words learned:
+
+- Refactor: reorganising code without changing what it does.
+- Source of truth: the one place a fact is stored; everything else reads it.
+- Baseline: a recorded result from before a change, to compare against.
+- Round trip: sending data out and back to check nothing got lost.

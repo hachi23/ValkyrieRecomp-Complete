@@ -107,7 +107,7 @@ Bash tool fails in ccache because `USERPROFILE` is missing there.
   `& C:\msys64\usr\bin\bash.exe -l tools/dev/check.sh` (build, tests, TCP
   docs, launcher smoke). Phase 0 of `docs/CLEANUP_PLAN.md` is done.
 
-## State at handoff (2026-10-06 night, Phase 1 done)
+## State at handoff (2026-10-06 night, Phase 2 done)
 
 ### Pick up here
 
@@ -161,12 +161,13 @@ reproduce; owner deferred it).
 
 ## Next steps
 
-1. Owner go for the Phase 1 commit; the owner still needs to press Ctrl+C
-   in game and try the pad shortcuts.
-2. Finding J is fixed on branch `cleanup/finding-j` (see CLEANUP_PLAN).
-   Old dumps outside `logs/` (play package root, 131 MB) are not pruned.
-3. Phase 2 single source of truth (settings table, hotkey catalog). Item 5
-   showed finding B again: one hotkey touched 6 files in 2 projects.
-4. Phase 3 file splits.
-5. Update the "Working with submodules" section of `AGENTS.md`.
-6. Findings I1/I2 in `docs/CLEANUP_PLAN.md`.
+`main` has Phase 1 (`043e181`) and finding J (`68c9886`), pushed. Phase 2
+is three commits on `cleanup/phase-2`; merge after the owner's go.
+
+1. The owner still needs to press Ctrl+C in game and try the pad shortcuts.
+2. Finding K (launcher resets memory card and P2 settings). Quick win; the
+   round-trip harness already shows it.
+3. Phase 3 file splits. Run `check.sh` after each move; the settings round
+   trips guard the launcher bridge.
+4. Update the "Working with submodules" section of `AGENTS.md`.
+5. Findings I1/I2 in `docs/CLEANUP_PLAN.md`.
