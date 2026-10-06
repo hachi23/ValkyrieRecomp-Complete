@@ -47,14 +47,10 @@ static const char* kButtonNames[LNG_BTN_COUNT] = {
 static const char* kP1Defaults[LNG_BTN_COUNT] = {
     "Up", "Down", "Left", "Right", "X", "Z", "S", "A", "D", "C", "Enter", "RShift"
 };
-// Display labels for engine hotkeys (order == LngHotkey == [KeyMap] keys).
 static const char* kHotkeyNames[LNG_HK_COUNT] = {
-    "Fullscreen", "Reset", "Pause", "Pause (dimmed)", "Fast-forward",
-    "Window bigger", "Window smaller", "Volume up", "Volume down",
-    "FPS readout", "Toggle renderer",
-    "Solar level up", "Solar level down", "Resume live solar",
-    "Rewind", "Save states menu",
-    "Fast-forward toggle", "Quick menu", "Scanlines", "Change disc", "Reinsert disc"
+#define LNG_HOTKEY(id, key, def, label) label,
+#include "launcher_hotkeys.def"
+#undef LNG_HOTKEY
 };
 static const char* kViewNames[7] = {
     "Dashboard", "Settings", "Controller", "Netplay", "Mods",

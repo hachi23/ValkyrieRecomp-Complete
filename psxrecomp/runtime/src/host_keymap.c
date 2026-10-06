@@ -29,6 +29,32 @@ typedef struct HostKeyAction {
 
 static HostKeyAction s_actions[HOST_KEYMAP_ACTION_COUNT];
 
+/* Each action's config.ini [KeyMap] key and default bind, in the same syntax
+ * as the file. The launcher lists the same keys and defaults in
+ * recomp-ui/src/common/launcher_hotkeys.def; test_hotkey_catalog_sync.py
+ * fails when the two disagree. */
+static const struct {
+    const char *key;
+    const char *def;
+} kCatalog[HOST_KEYMAP_ACTION_COUNT] = {
+    [HOST_KEYMAP_FULLSCREEN]      = {"Fullscreen",    "Alt+Return, Ctrl+F"},
+    [HOST_KEYMAP_TURBO]           = {"Turbo",         "Tab"},
+    [HOST_KEYMAP_VOLUME_UP]       = {"VolumeUp",      "Keypad +"},
+    [HOST_KEYMAP_VOLUME_DOWN]     = {"VolumeDown",    "Keypad -"},
+    [HOST_KEYMAP_DISPLAY_PERF]    = {"DisplayPerf",   "F"},
+#if defined(PSX_HAS_RBENGINE_SNAP)
+    [HOST_KEYMAP_REWIND]          = {"Rewind",        "F8"},
+#else
+    [HOST_KEYMAP_REWIND]          = {"Rewind",        ""},
+#endif
+    [HOST_KEYMAP_SAVE_STATE_MENU] = {"SaveStateMenu", "F7"},
+    [HOST_KEYMAP_SCANLINES]       = {"Scanlines",     "F6"},
+    [HOST_KEYMAP_TURBO_TOGGLE]    = {"TurboToggle",   "F9"},
+    [HOST_KEYMAP_CHEAT_MENU]      = {"CheatMenu",     "F5"},
+    [HOST_KEYMAP_DISC_SWAP]       = {"DiscSwap",      "Shift+F6"},
+    [HOST_KEYMAP_REINSERT_DISC]   = {"ReinsertDisc",  "Ctrl+C"},
+};
+
 static int ieq(const char *a, const char *b) {
     if (!a || !b) return 0;
     while (*a && *b) {
@@ -76,37 +102,6 @@ static void add_bind(HostKeymapAction action, int keycode, int scancode, int mod
     a->binds[a->count].scancode = scancode;
     a->binds[a->count].mods = mods;
     a->count++;
-}
-
-static void apply_defaults(void) {
-    if (s_actions[HOST_KEYMAP_FULLSCREEN].count == 0) {
-        add_bind(HOST_KEYMAP_FULLSCREEN, (int)SDLK_RETURN, (int)SDL_SCANCODE_RETURN, KMOD_ALT);
-        add_bind(HOST_KEYMAP_FULLSCREEN, (int)SDLK_f, (int)SDL_SCANCODE_F, KMOD_CTRL);
-    }
-    if (s_actions[HOST_KEYMAP_TURBO].count == 0)
-        add_bind(HOST_KEYMAP_TURBO, (int)SDLK_TAB, (int)SDL_SCANCODE_TAB, 0);
-    if (s_actions[HOST_KEYMAP_VOLUME_UP].count == 0)
-        add_bind(HOST_KEYMAP_VOLUME_UP, (int)SDLK_KP_PLUS, (int)SDL_SCANCODE_KP_PLUS, 0);
-    if (s_actions[HOST_KEYMAP_VOLUME_DOWN].count == 0)
-        add_bind(HOST_KEYMAP_VOLUME_DOWN, (int)SDLK_KP_MINUS, (int)SDL_SCANCODE_KP_MINUS, 0);
-    if (s_actions[HOST_KEYMAP_DISPLAY_PERF].count == 0)
-        add_bind(HOST_KEYMAP_DISPLAY_PERF, (int)SDLK_f, (int)SDL_SCANCODE_F, 0);
-#if defined(PSX_HAS_RBENGINE_SNAP)
-    if (s_actions[HOST_KEYMAP_REWIND].count == 0)
-        add_bind(HOST_KEYMAP_REWIND, (int)SDLK_F8, (int)SDL_SCANCODE_F8, 0);
-#endif
-    if (s_actions[HOST_KEYMAP_SAVE_STATE_MENU].count == 0)
-        add_bind(HOST_KEYMAP_SAVE_STATE_MENU, (int)SDLK_F7, (int)SDL_SCANCODE_F7, 0);
-    if (s_actions[HOST_KEYMAP_SCANLINES].count == 0)
-        add_bind(HOST_KEYMAP_SCANLINES, (int)SDLK_F6, (int)SDL_SCANCODE_F6, 0);
-    if (s_actions[HOST_KEYMAP_TURBO_TOGGLE].count == 0)
-        add_bind(HOST_KEYMAP_TURBO_TOGGLE, (int)SDLK_F9, (int)SDL_SCANCODE_F9, 0);
-    if (s_actions[HOST_KEYMAP_CHEAT_MENU].count == 0)
-        add_bind(HOST_KEYMAP_CHEAT_MENU, (int)SDLK_F5, (int)SDL_SCANCODE_F5, 0);
-    if (s_actions[HOST_KEYMAP_DISC_SWAP].count == 0)
-        add_bind(HOST_KEYMAP_DISC_SWAP, (int)SDLK_F6, (int)SDL_SCANCODE_F6, KMOD_SHIFT);
-    if (s_actions[HOST_KEYMAP_REINSERT_DISC].count == 0)
-        add_bind(HOST_KEYMAP_REINSERT_DISC, (int)SDLK_c, (int)SDL_SCANCODE_C, KMOD_CTRL);
 }
 
 /* Parse one "Ctrl+Alt+PageUp" token into key+mods. */
@@ -157,19 +152,17 @@ static void parse_value(HostKeymapAction action, const char *value) {
 }
 
 static HostKeymapAction action_for_key(const char *name) {
-    if (ieq(name, "Fullscreen")) return HOST_KEYMAP_FULLSCREEN;
-    if (ieq(name, "Turbo")) return HOST_KEYMAP_TURBO;
-    if (ieq(name, "VolumeUp")) return HOST_KEYMAP_VOLUME_UP;
-    if (ieq(name, "VolumeDown")) return HOST_KEYMAP_VOLUME_DOWN;
-    if (ieq(name, "DisplayPerf")) return HOST_KEYMAP_DISPLAY_PERF;
-    if (ieq(name, "Rewind")) return HOST_KEYMAP_REWIND;
-    if (ieq(name, "SaveStateMenu")) return HOST_KEYMAP_SAVE_STATE_MENU;
-    if (ieq(name, "CheatMenu")) return HOST_KEYMAP_CHEAT_MENU;
-    if (ieq(name, "Scanlines")) return HOST_KEYMAP_SCANLINES;
-    if (ieq(name, "TurboToggle")) return HOST_KEYMAP_TURBO_TOGGLE;
-    if (ieq(name, "DiscSwap")) return HOST_KEYMAP_DISC_SWAP;
-    if (ieq(name, "ReinsertDisc")) return HOST_KEYMAP_REINSERT_DISC;
+    int i;
+    for (i = 0; i < HOST_KEYMAP_ACTION_COUNT; i++)
+        if (ieq(name, kCatalog[i].key)) return (HostKeymapAction)i;
     return HOST_KEYMAP_ACTION_COUNT;
+}
+
+/* An action the file left empty or did not mention gets its default. */
+static void apply_defaults(void) {
+    int i;
+    for (i = 0; i < HOST_KEYMAP_ACTION_COUNT; i++)
+        if (s_actions[i].count == 0) parse_value((HostKeymapAction)i, kCatalog[i].def);
 }
 
 void host_keymap_load(const char *config_ini_path) {

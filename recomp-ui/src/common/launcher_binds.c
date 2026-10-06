@@ -174,24 +174,16 @@ static const char* genesis_binds_file_path(void) {
              ? g_launcher_keybinds_path : "settings.ini";
 }
 
-// The engine's config.ini [KeyMap] keys, in LngHotkey order.
 static const char* kHotkeyKey[LNG_HK_COUNT] = {
-    "Fullscreen", "Reset", "Pause", "PauseDimmed", "Turbo",
-    "WindowBigger", "WindowSmaller", "VolumeUp", "VolumeDown",
-    "DisplayPerf", "ToggleRenderer",
-    "SolarBrighter", "SolarDimmer", "SolarLive",
-    "Rewind", "SaveStateMenu",
-    "TurboToggle", "CheatMenu", "Scanlines", "DiscSwap", "ReinsertDisc"
+#define LNG_HOTKEY(id, key, def, label) key,
+#include "launcher_hotkeys.def"
+#undef LNG_HOTKEY
 };
-// Built-in defaults (shown when config.ini has no line; "" = unbound).
+// Shown when config.ini has no line.
 static const char* kHotkeyDef[LNG_HK_COUNT] = {
-    "Alt+Return", "Ctrl+R", "Shift+P", "P", "Tab",
-    /* WindowBigger/Smaller unbound; VolumeUp/Down default keypad +/-
-     * (psxrecomp host_keymap reads these from [KeyMap]). */
-    "", "", "Keypad +", "Keypad -", "F", "R",
-    "", "", "",
-    "F8", "F7",
-    "F9", "F5", "F6", "Shift+F6", "Ctrl+C"
+#define LNG_HOTKEY(id, key, def, label) def,
+#include "launcher_hotkeys.def"
+#undef LNG_HOTKEY
 };
 
 static void copy_str(char* d, size_t cap, const char* s) {

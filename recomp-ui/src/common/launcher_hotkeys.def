@@ -1,0 +1,26 @@
+/* Engine hotkeys, one row each, in LngHotkey order:
+ *   LNG_HOTKEY(id, config.ini [KeyMap] key, default bind, display label)
+ * An empty default means unbound. The PSX runtime keeps its own table in
+ * psxrecomp/runtime/src/host_keymap.c; psxrecomp/runtime/tests/
+ * test_hotkey_catalog_sync.py fails when the two disagree. */
+LNG_HOTKEY(FULLSCREEN,      "Fullscreen",     "Alt+Return, Ctrl+F", "Fullscreen")
+LNG_HOTKEY(RESET,           "Reset",          "Ctrl+R",             "Reset")
+LNG_HOTKEY(PAUSE,           "Pause",          "Shift+P",            "Pause")
+LNG_HOTKEY(PAUSE_DIMMED,    "PauseDimmed",    "P",                  "Pause (dimmed)")
+LNG_HOTKEY(TURBO,           "Turbo",          "Tab",                "Fast-forward")
+LNG_HOTKEY(WINDOW_BIGGER,   "WindowBigger",   "",                   "Window bigger")
+LNG_HOTKEY(WINDOW_SMALLER,  "WindowSmaller",  "",                   "Window smaller")
+LNG_HOTKEY(VOLUME_UP,       "VolumeUp",       "Keypad +",           "Volume up")
+LNG_HOTKEY(VOLUME_DOWN,     "VolumeDown",     "Keypad -",           "Volume down")
+LNG_HOTKEY(DISPLAY_PERF,    "DisplayPerf",    "F",                  "FPS readout")
+LNG_HOTKEY(TOGGLE_RENDERER, "ToggleRenderer", "R",                  "Toggle renderer")
+LNG_HOTKEY(SOLAR_BRIGHTER,  "SolarBrighter",  "",                   "Solar level up")
+LNG_HOTKEY(SOLAR_DIMMER,    "SolarDimmer",    "",                   "Solar level down")
+LNG_HOTKEY(SOLAR_LIVE,      "SolarLive",      "",                   "Resume live solar")
+LNG_HOTKEY(REWIND,          "Rewind",         "F8",                 "Rewind")
+LNG_HOTKEY(SAVE_STATE_MENU, "SaveStateMenu",  "F7",                 "Save states menu")
+LNG_HOTKEY(TURBO_TOGGLE,    "TurboToggle",    "F9",                 "Fast-forward toggle")
+LNG_HOTKEY(QUICK_MENU,      "CheatMenu",      "F5",                 "Quick menu")
+LNG_HOTKEY(SCANLINES,       "Scanlines",      "F6",                 "Scanlines")
+LNG_HOTKEY(DISC_SWAP,       "DiscSwap",       "Shift+F6",           "Change disc")
+LNG_HOTKEY(REINSERT_DISC,   "ReinsertDisc",   "Ctrl+C",             "Reinsert disc")

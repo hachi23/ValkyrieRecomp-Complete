@@ -92,17 +92,9 @@ typedef enum {
 // System hotkeys — mirrors the engine's config.ini [KeyMap] keys exactly, so
 // editing them here surgically rewrites the same lines config.c parses.
 typedef enum {
-    LNG_HK_FULLSCREEN = 0, LNG_HK_RESET, LNG_HK_PAUSE, LNG_HK_PAUSE_DIMMED,
-    LNG_HK_TURBO, LNG_HK_WINDOW_BIGGER, LNG_HK_WINDOW_SMALLER,
-    LNG_HK_VOLUME_UP, LNG_HK_VOLUME_DOWN, LNG_HK_DISPLAY_PERF, LNG_HK_TOGGLE_RENDERER,
-    LNG_HK_SOLAR_BRIGHTER, LNG_HK_SOLAR_DIMMER, LNG_HK_SOLAR_LIVE,
-    LNG_HK_REWIND, /* PSX local rewind filmstrip → [KeyMap] Rewind */
-    LNG_HK_SAVE_STATE_MENU, /* PSX save-state slot menu → [KeyMap] SaveStateMenu */
-    LNG_HK_TURBO_TOGGLE,    /* PSX press-to-latch fast-forward → [KeyMap] TurboToggle */
-    LNG_HK_QUICK_MENU,      /* PSX in-game Quick Menu → [KeyMap] CheatMenu */
-    LNG_HK_SCANLINES,       /* PSX scanline overlay → [KeyMap] Scanlines */
-    LNG_HK_DISC_SWAP,       /* PSX change disc → [KeyMap] DiscSwap */
-    LNG_HK_REINSERT_DISC,   /* PSX lid open/close → [KeyMap] ReinsertDisc */
+#define LNG_HOTKEY(id, key, def, label) LNG_HK_##id,
+#include "launcher_hotkeys.def"
+#undef LNG_HOTKEY
     LNG_HK_COUNT
 } LngHotkey;
 

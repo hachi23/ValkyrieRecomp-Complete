@@ -168,7 +168,15 @@ def debug_query(cmd):
 
 
 def run_game(dest, direct):
-    env = dict(os.environ, LNG_UI_SCALE='100', PSX_BIOS_HLE='0',
+    # The MSYS shell check.sh runs in changes what the game writes, so the
+    # game gets only the basic Windows variables and a PATH without MSYS.
+    keep = ('SYSTEMROOT', 'WINDIR', 'SYSTEMDRIVE', 'TEMP', 'TMP', 'USERPROFILE',
+            'APPDATA', 'LOCALAPPDATA', 'PROGRAMDATA', 'COMPUTERNAME', 'USERNAME',
+            'NUMBER_OF_PROCESSORS', 'PROCESSOR_ARCHITECTURE', 'OS', 'VULKAN_SDK')
+    base = {k: v for k, v in os.environ.items() if k.upper() in keep}
+    base['PATH'] = os.pathsep.join(p for p in os.environ.get('PATH', '').split(os.pathsep)
+                                   if 'msys64' not in p.lower())
+    env = dict(base, LNG_UI_SCALE='100', PSX_BIOS_HLE='0',
                LNG_SCRIPT=f'wait:60;click:{PLAY_BUTTON[0]},{PLAY_BUTTON[1]};wait:5')
     mode = '--no-launcher' if direct else '--launcher'
     proc = subprocess.Popen([os.path.join(dest, 'ValkyrieRecomp.exe'), mode,
@@ -211,7 +219,7 @@ def main():
     args = ap.parse_args()
 
     ok = True
-    dest = tempfile.mkdtemp(prefix='settings_rt_')
+    dest = tempfile.mkdtemp(prefix='settings_rt_', dir=BUILD)
     try:
         settings, expect_live = PROFILES[args.profile]
         make_install(dest, settings, args.exe)

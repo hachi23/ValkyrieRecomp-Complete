@@ -43,6 +43,34 @@ int main(int argc, char **argv) {
                                   (int)SDLK_UNKNOWN,
                                   (int)SDL_SCANCODE_F, 0),
           "default display perf accepts its physical scancode");
+    check(host_keymap_match(HOST_KEYMAP_SAVE_STATE_MENU, (int)SDLK_F7, 0),
+          "default save state menu is F7");
+    check(host_keymap_match(HOST_KEYMAP_SCANLINES, (int)SDLK_F6, 0),
+          "default scanlines is F6");
+    check(!host_keymap_match(HOST_KEYMAP_SCANLINES, (int)SDLK_F6, (int)KMOD_SHIFT),
+          "Shift+F6 is not scanlines");
+    check(host_keymap_match(HOST_KEYMAP_TURBO_TOGGLE, (int)SDLK_F9, 0),
+          "default fast-forward toggle is F9");
+    check(host_keymap_match(HOST_KEYMAP_CHEAT_MENU, (int)SDLK_F5, 0),
+          "default quick menu is F5");
+    check(host_keymap_match(HOST_KEYMAP_DISC_SWAP, (int)SDLK_F6, (int)KMOD_SHIFT),
+          "default disc swap is Shift+F6");
+    check(!host_keymap_match(HOST_KEYMAP_DISC_SWAP, (int)SDLK_F6, 0),
+          "plain F6 is not disc swap");
+    check(host_keymap_match(HOST_KEYMAP_REINSERT_DISC, (int)SDLK_c, mod_ctrl()),
+          "default reinsert disc is Ctrl+C");
+    check(host_keymap_match_event(HOST_KEYMAP_CHEAT_MENU, (int)SDLK_UNKNOWN,
+                                  (int)SDL_SCANCODE_F5, 0),
+          "default quick menu accepts its physical scancode");
+    check(host_keymap_match_event(HOST_KEYMAP_REINSERT_DISC, (int)SDLK_UNKNOWN,
+                                  (int)SDL_SCANCODE_C, mod_ctrl()),
+          "default reinsert disc accepts its physical scancode");
+    check(host_keymap_match_event(HOST_KEYMAP_VOLUME_UP, (int)SDLK_UNKNOWN,
+                                  (int)SDL_SCANCODE_KP_PLUS, 0),
+          "default volume up accepts its physical scancode");
+    check(host_keymap_match_event(HOST_KEYMAP_FULLSCREEN, (int)SDLK_UNKNOWN,
+                                  (int)SDL_SCANCODE_RETURN, mod_alt()),
+          "default fullscreen accepts the Return scancode");
 
     f = fopen(cfg, "wb");
     check(f != NULL, "create temporary config.ini");

@@ -71,9 +71,6 @@ assert '"Fast-forward toggle",' in MAIN
 assert 'h.contains("fast_forward_toggle_pad")' in CFG
 assert 'f << "fast_forward_toggle_pad = "' in CFG
 KEYMAP_H = (ROOT / "runtime" / "include" / "host_keymap.h").read_text(encoding="utf-8")
-KEYMAP_C = (ROOT / "runtime" / "src" / "host_keymap.c").read_text(encoding="utf-8")
 assert "HOST_KEYMAP_TURBO_TOGGLE," in KEYMAP_H
-assert 'ieq(name, "TurboToggle")' in KEYMAP_C
-assert "add_bind(HOST_KEYMAP_TURBO_TOGGLE, (int)SDLK_F9" in KEYMAP_C
 
 print("host shortcut guard passed")

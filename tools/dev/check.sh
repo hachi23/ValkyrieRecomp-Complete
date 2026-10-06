@@ -21,6 +21,21 @@ for t in psxrecomp/runtime/tests/*.py; do
 done
 echo "$pass passed"
 
+echo "== keymap test"
+if "$S/keymap_test.sh" > "$S/check-keymap.out" 2>&1; then tail -1 "$S/check-keymap.out"
+else tail -5 "$S/check-keymap.out"; failed+=("keymap test"); fi
+rm -f "$S/check-keymap.out"
+
+echo "== settings round trip"
+for args in "--profile 1 --compare tools/dev/baselines/settings_roundtrip.toml"             "--profile 2 --compare tools/dev/baselines/settings_roundtrip_2.toml"             "--profile 1 --direct" "--profile 2 --direct"; do
+  if python tools/dev/settings_roundtrip.py $args > "$S/check-rt.out" 2>&1; then
+    echo "ok  $args"
+  else
+    echo "FAIL $args"; tail -8 "$S/check-rt.out"; failed+=("settings round trip $args")
+  fi
+done
+rm -f "$S/check-rt.out"
+
 echo "== debug command docs"
 (cd psxrecomp && python tools/gen_tcp_commands.py --check) || failed+=("docs/TCP_COMMANDS.md is stale")
 

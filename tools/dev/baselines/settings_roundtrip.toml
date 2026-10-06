@@ -1,11 +1,17 @@
 # psxrecomp user settings - written by the launcher. Safe to hand-edit.
 # Overrides the bundled game.toml; the command line overrides this file.
 
+[assist_tools]
+enabled = false
+
 [retroachievements]
 enabled  = false
 hardcore = false
 username = ""
 token    = ""
+
+[cheats]
+enabled_ids = []
 
 [video]
 renderer          = "vulkan"
