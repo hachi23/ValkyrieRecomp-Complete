@@ -857,3 +857,37 @@ Words learned:
 - DLL: a shared helper file a program loads when it starts.
 - Hash: a short fingerprint computed from a file, used to recognise it.
 - Out-of-bounds read: reading past the end of a list into unrelated memory.
+
+## 2026-10-06: The watchdog that cried wolf
+
+The game has a watchdog: a helper that runs beside the game and checks ten
+times a second that it is still moving. If the game looks stuck for two
+seconds, the watchdog writes a "freeze dump", a big snapshot of memory, so
+we can see where it hung. Each one is 30 to 130 MB.
+
+It was raising false alarms every time you played:
+
+- **At the boot logo.** The watchdog also checks that the game's code is
+  doing something new. During the PlayStation logo the BIOS (the console's
+  built-in startup program) waits in one spot on purpose. That looked like
+  a hang.
+- **In the Quick Menu.** Opening a menu pauses the game, so its frames stop.
+  To the watchdog, a paused game and a frozen game look the same.
+
+Fixes. The menus now tap the watchdog on the shoulder while they are open
+("I paused it on purpose"). If a menu itself hangs, the tapping stops and
+the alarm still works. The logo check ignores the BIOS. And the game now
+keeps only the 3 newest dumps in `logs/`, so the folder can never grow
+without limit.
+
+Tested: a 25 second boot and 8 seconds in the Quick Menu wrote nothing.
+Then I froze the game on purpose (paused its main worker from outside) for
+6 seconds, and the watchdog still caught it. The next start deleted the
+extra old dumps.
+
+Words learned:
+
+- Watchdog: a helper that checks another program is still alive.
+- False positive: an alarm that goes off when nothing is wrong.
+- Thread: one worker inside a program; the game and the watchdog are
+  separate workers, which is why the watchdog can see the game freeze.

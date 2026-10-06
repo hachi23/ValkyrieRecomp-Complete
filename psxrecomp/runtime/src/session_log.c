@@ -21,6 +21,7 @@ extern uint64_t s_frame_count;
 
 #define SL_KEEP_SESSIONS 10
 #define SL_KEEP_CRASHES 20
+#define SL_KEEP_FREEZE_DUMPS 3   /* 30-130 MB each */
 #define SL_MAX_LISTED 256
 #define SL_CHEAT_RING 32
 #define SL_CHEAT_WINDOW_FRAMES 600
@@ -125,6 +126,7 @@ void session_log_open(const char *logs_dir) {
     snprintf(s_path, sizeof(s_path), "%s/%s", s_dir, name);
     s_log = fopen(s_path, "w");
     prune(s_dir, "session-", ".log", SL_KEEP_SESSIONS);
+    prune(s_dir, "psx_freeze_dump_", ".json", SL_KEEP_FREEZE_DUMPS);
     write_marker();
     if (s_have_previous)
         session_log_event("previous run ended without a clean exit (%s)", s_previous);

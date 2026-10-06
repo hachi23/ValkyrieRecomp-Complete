@@ -163,7 +163,8 @@ reproduce; owner deferred it).
 
 1. Owner go for the Phase 1 commit; the owner still needs to press Ctrl+C
    in game and try the pad shortcuts.
-2. Finding J (freeze dumps of 30 to 130 MB in normal play). Quick win.
+2. Finding J is fixed on branch `cleanup/finding-j` (see CLEANUP_PLAN).
+   Old dumps outside `logs/` (play package root, 131 MB) are not pruned.
 3. Phase 2 single source of truth (settings table, hotkey catalog). Item 5
    showed finding B again: one hotkey touched 6 files in 2 projects.
 4. Phase 3 file splits.

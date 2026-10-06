@@ -25,6 +25,11 @@ extern "C" {
  * binary produced the file. */
 void freeze_heartbeat_start(const char *backend_label);
 
+/* Call once per iteration of a host pause loop (Quick Menu, save-state
+ * menu, rewind). Frames stop on purpose there; the watchdog must not
+ * report that as a freeze. */
+void freeze_heartbeat_note_host_pause(void);
+
 #ifdef __cplusplus
 }
 #endif

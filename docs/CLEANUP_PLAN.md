@@ -191,6 +191,16 @@ New finding from this phase:
   `logs/` (Measured). The play package root holds a 131 MB one. Guess: the
   heartbeat treats long loads as freezes. Over weeks this fills the disk.
   Quick win: find the trigger, raise its threshold or keep only the last N.
+  **Fixed 2026-10-06.** Two false alarms, both Measured. At boot the
+  "logic pinned" check (kind 5) fired while the BIOS logo idled in ROM
+  (`current_func` 0x1FC0xxxx). With the Quick Menu open, frames stop on
+  purpose and kind 1 (hard freeze) fired; a menu closed within the 2 s
+  window gives kind 3 (slow frames), which matches the play package dump.
+  Now the three host pause loops bump `freeze_heartbeat_note_host_pause()`
+  and a window with pause activity counts as healthy; kind 5 skips BIOS
+  ROM; `session_log_open` keeps the newest 3 dumps in `logs/`. Check:
+  25 s boot and an 8 s Quick Menu wrote no dump; suspending the main thread
+  for 6 s still wrote kind 3 and kind 1; the next launch pruned 5 to 3.
 
 Original items:
 

@@ -6366,6 +6366,7 @@ static void rewind_pause_present(void) {
 /* Freeze guest in vblank present while the rewind filmstrip is open. */
 static void rewind_host_pause_loop(void) {
     while (psx_rewind_is_open()) {
+        freeze_heartbeat_note_host_pause();
         SDL_Event ev;
         while (SDL_PollEvent(&ev)) {
             if (ev.type == SDL_QUIT) {
@@ -6408,6 +6409,7 @@ static void rewind_host_pause_loop(void) {
 /* Freeze guest in vblank present while the save-state slot menu is open. */
 static void savestate_menu_host_pause_loop(void) {
     while (savestate_menu_open) {
+        freeze_heartbeat_note_host_pause();
         SDL_Event ev;
         while (SDL_PollEvent(&ev)) {
             if (ev.type == SDL_QUIT) {
@@ -6852,6 +6854,7 @@ static void cheat_menu_poll_toggle_buttons(void) {
 
 static void cheat_menu_host_pause_loop(void) {
     while (cheat_menu_open) {
+        freeze_heartbeat_note_host_pause();
         SDL_Event ev;
         while (SDL_PollEvent(&ev)) {
             if (ev.type == SDL_QUIT) {

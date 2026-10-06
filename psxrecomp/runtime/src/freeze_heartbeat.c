@@ -75,6 +75,9 @@ extern uint8_t *memory_get_scratchpad_ptr(void);   /* memory.c */
 extern uint8_t *g_psx_ram;                         /* memory.c — 2 MiB DRAM */
 
 static int s_started = 0;
+static volatile uint32_t s_host_pauses = 0;
+
+void freeze_heartbeat_note_host_pause(void) { s_host_pauses++; }
 static char s_backend[32] = "psx-runtime";
 /* "<exe>/logs/" once the session log is open, else "" (current folder). */
 static char s_out_dir[520] = "";
@@ -163,6 +166,7 @@ typedef struct {
     uint64_t tcp_stall_ms;
     uint16_t t1_count;        /* Timer1/RCnt1 counter — must advance if the wait is to complete */
     uint64_t t1_irq_fired;    /* Timer1 IRQ-fire count — flat == RCnt IRQ never fires */
+    uint32_t host_pauses;     /* host pause-loop iterations */
 } HbRingEntry;
 static HbRingEntry s_ring[RING_CAP];
 static uint32_t    s_ring_head = 0;
@@ -753,6 +757,7 @@ static void heartbeat_write(void) {
     re->exc_reentry     = exc_reentry;
     re->dirty_ram_insns = g_dirty_ram_insns_run;
     re->current_func    = cur_fn;
+    re->host_pauses     = s_host_pauses;
     re->last_store_pc   = last_store;
     re->i_stat          = i_stat;
     re->sio_stat        = sio_stat;
@@ -804,13 +809,24 @@ static void heartbeat_write(void) {
             (s_ring[newest_idx].last_store_pc   == s_ring[oldest_idx].last_store_pc) &&
             (s_ring[newest_idx].dirty_ram_insns == s_ring[oldest_idx].dirty_ram_insns);
 
-        if (frame_delta == 0)
+        /* A host menu held the guest on purpose during the window. A hung
+         * menu stops counting, so it still reads as a freeze. */
+        const int host_paused =
+            s_ring[newest_idx].host_pauses != s_ring[oldest_idx].host_pauses;
+        /* The BIOS boot logo idles in ROM with frames running; that is not
+         * a game spin. */
+        const uint32_t fn_phys = s_ring[newest_idx].current_func & 0x1FFFFFFFu;
+        const int in_bios_rom = fn_phys >= 0x1FC00000u && fn_phys < 0x1FC80000u;
+
+        if (host_paused)
+            wedge_kind = 0;
+        else if (frame_delta == 0)
             wedge_kind = 1;
         else if (excre_delta / frame_delta > WEDGE_EXC_REENTRY_PER_FRAME_THRESHOLD)
             wedge_kind = 2;
         else if (frame_delta < WEDGE_SLOW_FRAMES_MAX_DELTA)
             wedge_kind = 3;
-        else if (logic_pinned)
+        else if (logic_pinned && !in_bios_rom)
             wedge_kind = 5;  /* spin freeze: game wedged while frames advance */
     }
 
