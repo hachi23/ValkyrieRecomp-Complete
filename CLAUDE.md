@@ -2,9 +2,11 @@
 
 Read these first, in order:
 
-1. `AGENTS.md` (owner rules: teach in plain language, LEARNING.md lessons,
-   ask before commit/push).
-2. `docs/HANDOFF.md` (where the project stands, how to build and test).
+1. `AGENTS.md` (roles and working agreement: plain-language reports,
+   LEARNING.md decision log, approval between phases, ask before
+   commit/push).
+2. `README.md` and `docs/CHANGES.md` (what the project is and what this fork
+   has changed so far).
 3. `docs/CLEANUP_PLAN.md` (the phased plan the next sessions execute).
 
 Work style: use the **poteto-solo** project skill

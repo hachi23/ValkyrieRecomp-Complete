@@ -172,7 +172,7 @@ Original plan:
 
 Result: all 8 items done and checked on the real surface, `check.sh` says
 CHECK OK with 47 of 47 tests (Measured). Items 1 to 3 were measured in the
-earlier session (see `docs/HANDOFF.md`). Item 5: Quick Menu REINSERT DISC
+earlier session. Item 5: Quick Menu REINSERT DISC
 showed the toast, logged `disc reinsert`, and the game kept running; the
 launcher HOTKEYS page lists Reinsert disc as Ctrl+C. Item 6: the Controller
 page reads Cross, Triangle, Left stick up, and HOTKEYS reads
