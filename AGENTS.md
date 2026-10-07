@@ -24,7 +24,9 @@ After **every phase**, and after any significant step inside a phase:
    when asked.
 2. **Record the decision in `LEARNING.md`** (append; never rewrite earlier
    entries): a dated heading, the plain-language explanation and a short
-   "Words learned" glossary. This file is the project's decision log.
+   "Words learned" glossary. This file is the lead's private decision log:
+   it is git-ignored and must never be committed here. Its backup lives on
+   the `study-notes` branch of the private `hachi23/Valkyrie-recomp` repo.
 3. **Wait for approval.** End with "Any questions before the next phase?"
    Do not start the next phase until the lead says to continue. Add anything
    important from the discussion to that phase's entry.

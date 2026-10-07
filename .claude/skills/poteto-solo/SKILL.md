@@ -59,7 +59,7 @@ as follows.
 
 ## House rules that stay on top
 
-- AGENTS.md teaching rule: plain language, a dated lesson in `LEARNING.md`
+- AGENTS.md working agreement: plain language, a dated lesson in `LEARNING.md` (local only, never committed)
   after each step, short answers.
 - Name the principles that shaped each decision in the reply (poteto
   Non-negotiables), citing only leaves you read this session.

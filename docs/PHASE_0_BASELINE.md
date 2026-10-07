@@ -74,7 +74,7 @@ The local baseline build uses `PSX_DEBUG_TOOLS=ON` for inspection and screenshot
 
 Windows detected an Xbox 360-compatible controller. Local settings assign Player 1 to gamepad in digital mode; actual controller button response remains unconfirmed.
 
-The Vulkan-capable Windows build is complete. Phase 0 remains incomplete until the remaining OpenGL checkpoints and repeatable saves pass. Work is moving to a separate CachyOS system; see [the migration handoff](CACHYOS_HANDOFF.md).
+The Vulkan-capable Windows build is complete. Phase 0 remains incomplete until the remaining OpenGL checkpoints and repeatable saves pass.
 
 ## CachyOS verification (2026-10-05)
 

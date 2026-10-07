@@ -86,8 +86,7 @@ was reverted, and the patch is archived locally.
   round trips, a docs drift check and a launcher screenshot in one command.
 - Settings and hotkeys now come from one table each instead of hand-copied
   lists. A settings round-trip test caught two launcher choices being
-  silently changed (a disabled memory card, player 2's deadzone); both fixed
-  ("Finding K" in [LEARNING.md](../LEARNING.md)).
+  silently changed (a disabled memory card, player 2's deadzone); both fixed.
 
 ## Player features
 

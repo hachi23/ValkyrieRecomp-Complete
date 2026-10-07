@@ -71,8 +71,9 @@ Rules every change had to pass:
   the software renderer is the correctness reference.
 - **Test-gated.** `tools/dev/check.sh` builds the game and runs all tests
   before every commit.
-- **Write it down.** Each step has a plain-language lesson in
-  [LEARNING.md](LEARNING.md).
+- **Write it down.** Every change is recorded with its evidence in
+  [docs/CHANGES.md](docs/CHANGES.md) and
+  [docs/PERFORMANCE_FINDINGS.md](docs/PERFORMANCE_FINDINGS.md).
 
 ## Supported game
 
@@ -120,7 +121,6 @@ Framework build details: [psxrecomp/docs/BUILDING.md](psxrecomp/docs/BUILDING.md
 | `docs/CHANGES.md` | What this fork changed, with evidence |
 | `docs/PERFORMANCE_FINDINGS.md` | Full performance investigation |
 | `docs/CLEANUP_PLAN.md`, `PLAN.md` | Phase plans |
-| `LEARNING.md` | Plain-language lessons written after each step |
 
 ## Legal
 

@@ -94,3 +94,6 @@ starvation_dump.jsonl
 /psxrecomp/runtime/include/overlay_codegen_hash.h
 __pycache__/
 /psx_freeze_*.json
+
+# Private study notes (backup: hachi23/Valkyrie-recomp, branch study-notes)
+/LEARNING.md
