@@ -998,3 +998,28 @@ Words learned:
   at least that glibc version.
 - tarball: one file holding a whole folder, like a zip, that keeps Linux file
   permissions.
+
+## 2026-10-07: Credits and a front page for visitors
+
+**What was done.** The README is the first page anyone sees on GitHub, and it
+was still the original project's page. It now says who made what, what this
+fork changed, the measured results, how the work was checked, and how to
+build. Three files carry the detail:
+
+- `CREDITS.md` names the original authors: Ed1z19 made ValkyrieRecomp, and
+  Matthew Stanley (mstan) made PSXRecomp and the recomp-ui launcher. It also
+  lists the libraries and references (DuckStation, psx-spx) the work relied on.
+- `docs/CHANGES.md` lists everything this fork added, side by side with what
+  already existed, so nobody mistakes the original authors' work for yours.
+- The README now says plainly that the 36 to 60 fps field result came from
+  switching off a debug-only recorder that normal release builds never had.
+  Being exact about a number is what makes the other numbers believable.
+
+The Linux packaging script also got a warning: it copies your own discs into
+the package, so its output must never be shared.
+
+### Words learned
+
+- **README** is the front page of a code repository.
+- **Attribution** is naming who made the work you build on.
+- **License** is the set of rules for how others may use a piece of code.

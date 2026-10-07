@@ -1,5 +1,8 @@
 #!/bin/bash
 # Pack build-linux into a ready-to-play folder and tarball.
+# Personal use only: this copies YOUR disc images and saves into the package.
+# Never share or upload its output. Public releases go through
+# scripts/package_setup_release.sh, which contains no game data.
 # package_linux.sh <discs folder with "Disc 1" and "Disc 2"> <saves folder> <out dir>
 set -euo pipefail
 S="$(cd "$(dirname "$0")" && pwd)"

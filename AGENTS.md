@@ -1,4 +1,4 @@
-# Agent instructions (ValkyrieRecomp private fork)
+# Agent instructions (ValkyrieRecomp fork)
 
 Read `PLAN.md` first. Work one phase at a time, in order, unless told otherwise.
 
@@ -33,19 +33,20 @@ or hardware works before fixing it.
 ## Layout
 
 - This repo: game config and packaging for Valkyrie Profile (USA, SLUS-01156 /
-  SLUS-01179). Two submodules, both private forks owned by `hachi23`:
+  SLUS-01179). Two framework folders, imported from `hachi23`'s forks:
   - `psxrecomp/` — recompiler + runtime. Most code changes go here.
   - `recomp-ui/` — Dear ImGui launcher.
 - `psxrecomp/CLAUDE.md` and `psxrecomp/CONTRIBUTING.md` describe framework
   rules. Follow them, **except**: this fork allows the single low-volume
   session/event log and crash-history files described in PLAN.md Phase 4.
 
-## Working with submodules
+## One repo, no submodules
 
-1. Commit and push the change inside `psxrecomp/` or `recomp-ui/` first
-   (branch per feature, e.g. `feat/cheats-engine`).
-2. Then commit the updated submodule pointer in this repo.
-3. Never leave this repo pointing at an unpushed submodule commit.
+Since 2026-10-06 `psxrecomp/` and `recomp-ui/` are plain folders in this
+repo (see `docs/HANDOFF.md`). One commit can change the game, the framework
+and the launcher together. The old three-repo history stays in
+`hachi23/Valkyrie-recomp`, `hachi23/Psx-recomp-` and `hachi23/Recomp-ui`.
+Record user-visible changes in `docs/CHANGES.md`.
 
 ## Build
 
